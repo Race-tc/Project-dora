@@ -1,5 +1,5 @@
 """
-backend/main.py — Project Dora subscription backend.
+backend/main.py — DORA subscription backend.
 
 Routes:
   POST /checkout          Create a Stripe Checkout session (garage signs up)
@@ -23,7 +23,7 @@ from backend.settings import cfg
 
 stripe.api_key = cfg.STRIPE_SECRET_KEY
 
-app = FastAPI(title="Project Dora Backend", version="1.0")
+app = FastAPI(title="DORA Backend", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,

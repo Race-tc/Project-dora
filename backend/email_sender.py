@@ -11,12 +11,12 @@ from backend.settings import cfg
 
 
 def send_licence_email(to_email: str, licence_key: str) -> None:
-    subject = "Your Project Dora Licence Key"
+    subject = "Your DORA Licence Key"
 
     html = f"""
     <html><body style="font-family:Arial,sans-serif;background:#0a0a1a;color:#e0e0ff;padding:32px">
     <div style="max-width:520px;margin:auto;background:#12122a;border-radius:8px;padding:32px">
-      <h1 style="color:#7c6fff;margin-top:0">Project Dora</h1>
+      <h1 style="color:#7c6fff;margin-top:0">DORA</h1>
       <p>Thank you for subscribing! Here is your licence key:</p>
       <div style="background:#1a1a3a;border:1px solid #7c6fff;border-radius:6px;
                   padding:16px;font-family:monospace;font-size:18px;
@@ -25,7 +25,7 @@ def send_licence_email(to_email: str, licence_key: str) -> None:
       </div>
       <p style="color:#888">To activate:</p>
       <ol style="color:#aaa;line-height:1.8">
-        <li>Open Project Dora</li>
+        <li>Open DORA</li>
         <li>Go to <strong style="color:#e0e0ff">Settings</strong></li>
         <li>Paste your licence key and click <strong style="color:#e0e0ff">Save</strong></li>
       </ol>
