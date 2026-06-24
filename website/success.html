@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Successful — Project Dora</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    .success-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .success-card {
+      background: var(--bg-card);
+      border: 1.5px solid #3ecf8e44;
+      border-radius: 16px;
+      padding: 48px 40px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(62,207,142,.08);
+    }
+    .success-icon { font-size: 56px; margin-bottom: 20px; }
+    .success-card h1 { font-size: 30px; font-weight: 800; margin-bottom: 12px; }
+    .success-card .ok { color: #3ecf8e; }
+    .success-card p { color: var(--fg-dim); font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+    .steps-list {
+      text-align: left;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 24px 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .steps-list li { display: flex; gap: 12px; font-size: 14px; color: var(--fg-dim); }
+    .steps-list li span.num {
+      background: var(--accent);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .note { font-size: 13px; color: var(--fg-muted); }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo" style="text-decoration:none">Project <span class="accent">Dora</span></a>
+  </div>
+</nav>
+
+<div class="success-page">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <h1>You're all set, <span class="ok">welcome aboard!</span></h1>
+    <p>
+      Payment confirmed. Your Project Dora licence key is on its way —
+      check your inbox (and spam folder) for an email from us.
+    </p>
+
+    <ol class="steps-list">
+      <li>
+        <span class="num">1</span>
+        <span>Download the installer from the <a href="index.html#download">downloads section</a> and run it.</span>
+      </li>
+      <li>
+        <span class="num">2</span>
+        <span>Open Project Dora, click <strong>Settings</strong> in the top-right corner.</span>
+      </li>
+      <li>
+        <span class="num">3</span>
+        <span>Paste your <strong>DORA-…</strong> licence key into the Licence Key field and click Save.</span>
+      </li>
+      <li>
+        <span class="num">4</span>
+        <span>Restart the app — AI analysis is now fully unlocked.</span>
+      </li>
+    </ol>
+
+    <p class="note">
+      Didn't receive an email within 5 minutes?
+      <a href="mailto:support@projectdora.com">Contact support</a> and we'll sort it out.
+    </p>
+
+    <a href="index.html" class="btn btn-lg" style="margin-top: 24px;">← Back to homepage</a>
+  </div>
+</div>
+</body>
+</html>

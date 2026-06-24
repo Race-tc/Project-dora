@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Dora — AI-Powered ECU Calibration Software</title>
+  <meta name="description" content="Professional ECU tuning software with AI-powered calibration analysis. Built for garages. £30/month." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo">Project <span class="accent">Dora</span></div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="mailto:support@projectdora.com">Support</a>
+    </div>
+    <a href="#pricing" class="btn btn-sm">Get Started</a>
+  </div>
+</nav>
+
+<!-- ── HERO ────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="container">
+    <div class="badge">Professional ECU Calibration Software</div>
+    <h1>AI-Powered Tuning.<br /><span class="accent">Built for Garages.</span></h1>
+    <p class="hero-sub">
+      Project Dora reads your engine data logs, analyses fuel trims, boost pressure,
+      and MAF readings, then recommends precise map adjustments — all in seconds.
+      No guesswork. No wasted dyno time.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn btn-lg">Start for £30/month</a>
+      <a href="#features" class="btn btn-ghost btn-lg">See what it does →</a>
+    </div>
+    <div class="hero-note">No contract. Cancel any time. Key delivered by email.</div>
+  </div>
+</section>
+
+<!-- ── SOCIAL PROOF BAR ─────────────────────────────────────────────────────── -->
+<div class="proof-bar">
+  <div class="container proof-inner">
+    <span>OBD-II live data</span>
+    <span class="dot">·</span>
+    <span>AI map recommendations</span>
+    <span class="dot">·</span>
+    <span>ROM identification</span>
+    <span class="dot">·</span>
+    <span>Windows desktop app</span>
+    <span class="dot">·</span>
+    <span>No cloud lock-in</span>
+  </div>
+</div>
+
+<!-- ── FEATURES ─────────────────────────────────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="container">
+    <h2>Everything your workshop needs</h2>
+    <p class="section-sub">One subscription. Full feature set. No add-ons to buy.</p>
+
+    <div class="feature-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Live OBD-II Monitoring</h3>
+        <p>Connect directly to the vehicle via ELM327 or simulate with built-in data. Real-time RPM, MAP, MAF, fuel trims, knock, and O2 sensor readings — all on one screen.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>AI Calibration Analysis</h3>
+        <p>Claude AI reads your log data and returns structured, conservative map adjustments with per-cell explanations. Targets fuel trim within ±5% and flags knock, lean conditions, and boost creep automatically.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🗺️</div>
+        <h3>3D Map Visualisation</h3>
+        <p>Interactive 3D surface plots for Boost, Throttle, MAF, Short Term FT, and Long Term FT. Click any cell to edit. Changes are highlighted in real time before you apply them.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📂</div>
+        <h3>ROM Identification</h3>
+        <p>Automatic vehicle identification from ROM binary files using a machine learning classifier trained on real ECU data. Vehicle-specific constraints applied to every recommendation.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Log Analysis Dashboard</h3>
+        <p>Upload and analyse CSV data logs. Automatic channel detection, statistical summary, and per-channel plots. Identify problem RPM/load zones before touching the map.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>AI Follow-up Chat</h3>
+        <p>After analysis, ask follow-up questions in plain English. "Why did you recommend leaning out at 4000 RPM?" or "Is it safe to run 1.5 bar on this engine?" — full context retained.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ─────────────────────────────────────────────────────────── -->
+<section class="how" id="how">
+  <div class="container">
+    <h2>How it works</h2>
+    <p class="section-sub">From cold start to calibration in four steps</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Connect</h3>
+        <p>Plug in your ELM327 OBD-II adapter and select the COM port in Project Dora. Or run in Simulator mode with no hardware required.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Log</h3>
+        <p>Record a drive or upload an existing CSV log. The dashboard automatically detects channels and builds a statistical summary.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Analyse</h3>
+        <p>Hit "Analyse". The AI reads the log and returns precise map cell adjustments — conservative, safe, and explained in plain English.</p>
+      </div>
+      <div class="step-arrow">→</div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>Apply</h3>
+        <p>Review and accept the recommended changes. The map updates instantly. Re-log to verify the improvement.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ──────────────────────────────────────────────────────────────── -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <h2>Simple pricing</h2>
+    <p class="section-sub">One plan. Everything included. No surprises.</p>
+
+    <div class="pricing-card">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="price-row">
+        <span class="price">£30</span>
+        <span class="price-period">/month per workshop</span>
+      </div>
+      <ul class="price-features">
+        <li><span class="check">✓</span> Full desktop app (Windows)</li>
+        <li><span class="check">✓</span> Unlimited AI calibration analyses</li>
+        <li><span class="check">✓</span> Live OBD-II monitoring</li>
+        <li><span class="check">✓</span> 3D map editor</li>
+        <li><span class="check">✓</span> ROM identification</li>
+        <li><span class="check">✓</span> Log analysis dashboard</li>
+        <li><span class="check">✓</span> Email support</li>
+        <li><span class="check">✓</span> All future updates included</li>
+      </ul>
+      <button class="btn btn-lg btn-full" id="buy-btn" onclick="startCheckout()">
+        Subscribe &amp; Download
+      </button>
+      <p class="pricing-note">
+        Licence key emailed instantly after payment.<br />
+        No contract — cancel any time from your billing portal.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ─────────────────────────────────────────────────────────────────── -->
+<section class="faq" id="faq">
+  <div class="container">
+    <h2>Common questions</h2>
+    <div class="faq-list">
+
+      <details class="faq-item">
+        <summary>How do I get the software after paying?</summary>
+        <p>Your licence key is emailed to you within seconds of payment. Download the installer from this page, install it, open Settings in the app, and paste your key. That's it — fully unlocked.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>What hardware do I need?</summary>
+        <p>A Windows PC and an ELM327 OBD-II Bluetooth or USB adapter (available for under £10 online). Project Dora also runs in Simulator mode with no hardware — useful for testing and training.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Is my engine data sent anywhere?</summary>
+        <p>Log data is sent to our secure AI backend only when you click "Analyse". It is used solely to generate your recommendation and is not stored or shared. OBD live data never leaves your machine.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Can I use it on more than one computer?</summary>
+        <p>Your licence covers one workshop (one active installation). If you need to move to a new machine, just install the app and enter the same key.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>What vehicles does it support?</summary>
+        <p>Any vehicle with an OBD-II port (all petrol and diesel cars sold in the UK after 2001). ROM identification supports a growing database of common ECU binaries — coverage expands with each update.</p>
+      </details>
+
+      <details class="faq-item">
+        <summary>What if I want to cancel?</summary>
+        <p>Cancel any time from the billing portal link in your welcome email — no phone calls, no forms. Your access continues until the end of the billing period.</p>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── DOWNLOAD ─────────────────────────────────────────────────────────────── -->
+<section class="download" id="download">
+  <div class="container download-inner">
+    <div>
+      <h2>Ready to install?</h2>
+      <p>Download the installer, subscribe above to get your licence key, then paste it into Settings. You're tuning within minutes.</p>
+    </div>
+    <a href="#" class="btn btn-lg" id="download-btn">
+      Download for Windows
+    </a>
+  </div>
+</section>
+
+<!-- ── FOOTER ───────────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="logo">Project <span class="accent">Dora</span></div>
+    <div class="footer-links">
+      <a href="mailto:support@projectdora.com">Support</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <p class="footer-copy">© 2026 Project Dora. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- ── Checkout modal overlay ───────────────────────────────────────────────── -->
+<div id="checkout-overlay" class="overlay hidden">
+  <div class="modal">
+    <h3>Enter your email</h3>
+    <p>Your licence key will be sent here after payment.</p>
+    <input type="email" id="checkout-email" placeholder="workshop@example.com" />
+    <div id="checkout-error" class="modal-error hidden"></div>
+    <div class="modal-btns">
+      <button class="btn btn-lg btn-full" id="modal-submit" onclick="submitCheckout()">Continue to Payment →</button>
+      <button class="btn-ghost-sm" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

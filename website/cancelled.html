@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout Cancelled — Project Dora</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    .cancel-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .cancel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    .cancel-icon { font-size: 52px; margin-bottom: 20px; }
+    .cancel-card h1 { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+    .cancel-card p { color: var(--fg-dim); font-size: 15px; line-height: 1.7; margin-bottom: 24px; }
+    .cancel-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  </style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo" style="text-decoration:none">Project <span class="accent">Dora</span></a>
+  </div>
+</nav>
+
+<div class="cancel-page">
+  <div class="cancel-card">
+    <div class="cancel-icon">🔙</div>
+    <h1>No worries — you're welcome back any time</h1>
+    <p>
+      Your checkout was cancelled and nothing has been charged.
+      Whenever you're ready to get started, we'll be here.
+    </p>
+    <div class="cancel-actions">
+      <a href="index.html#pricing" class="btn btn-lg">Try again →</a>
+      <a href="mailto:support@projectdora.com" style="font-size:13px; color: var(--fg-muted); margin-top: 6px;">
+        Have a question? Contact support
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>
