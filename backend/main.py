@@ -132,8 +132,8 @@ async def create_checkout(body: CheckoutRequest):
                 {"price": cfg.STRIPE_SETUP_PRICE_ID, "quantity": 1},
                 {"price": cfg.STRIPE_PRICE_ID, "quantity": 1},
             ],
-            success_url=f"{cfg.SITE_URL}/success.html?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{cfg.SITE_URL}/cancelled.html",
+            success_url=f"{cfg.SITE_URL}/dora/success.html?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{cfg.SITE_URL}/dora/cancelled.html",
             metadata={"email": body.email},
         )
     except stripe.error.StripeError as exc:
