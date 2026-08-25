@@ -27,11 +27,8 @@ class BackendConfig:
     ADMIN_TOKEN:            str   # secret token for /admin endpoints
     BASE_URL:               str   # e.g. https://api.projectdora.com (backend)
     SITE_URL:               str   # e.g. https://projectdora.com (website)
-    SMTP_HOST:              str
-    SMTP_PORT:              int
-    SMTP_USER:              str
-    SMTP_PASS:              str
-    SMTP_FROM:              str
+    RESEND_API_KEY:         str   # from https://resend.com/api-keys
+    EMAIL_FROM:             str   # "Name <address>" — must be a Resend-verified sender/domain
 
 
 def _load() -> BackendConfig:
@@ -49,11 +46,8 @@ def _load() -> BackendConfig:
         ADMIN_TOKEN           = os.environ["ADMIN_TOKEN"],
         BASE_URL              = os.environ.get("BASE_URL", "http://localhost:8000"),
         SITE_URL              = os.environ.get("SITE_URL", "https://projectdora.com"),
-        SMTP_HOST             = os.environ.get("SMTP_HOST", "smtp.gmail.com"),
-        SMTP_PORT             = int(os.environ.get("SMTP_PORT", "465")),
-        SMTP_USER             = os.environ["SMTP_USER"],
-        SMTP_PASS             = os.environ["SMTP_PASS"],
-        SMTP_FROM             = os.environ.get("SMTP_FROM", os.environ["SMTP_USER"]),
+        RESEND_API_KEY        = os.environ["RESEND_API_KEY"],
+        EMAIL_FROM            = os.environ.get("EMAIL_FROM", "DORA <onboarding@resend.dev>"),
     )
 
 

@@ -1,11 +1,13 @@
 """
-backend/email_sender.py — Send licence key emails via SMTP.
+backend/email_sender.py — Send licence key emails via Resend's HTTP API.
+
+Raw SMTP (ports 465/587) is blocked outbound on Railway's Free/Trial/Hobby
+plans to prevent spam abuse, only unblocked on Pro — so this goes over
+HTTPS instead, which isn't restricted.
 """
 from __future__ import annotations
 
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import httpx
 
 from settings import cfg
 
@@ -37,18 +39,15 @@ def send_licence_email(to_email: str, licence_key: str) -> None:
     </body></html>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"]    = cfg.SMTP_FROM
-    msg["To"]      = to_email
-    msg.attach(MIMEText(html, "html"))
-
-    if cfg.SMTP_PORT == 465:
-        with smtplib.SMTP_SSL(cfg.SMTP_HOST, cfg.SMTP_PORT) as server:
-            server.login(cfg.SMTP_USER, cfg.SMTP_PASS)
-            server.sendmail(cfg.SMTP_FROM, to_email, msg.as_string())
-    else:
-        with smtplib.SMTP(cfg.SMTP_HOST, cfg.SMTP_PORT) as server:
-            server.starttls()
-            server.login(cfg.SMTP_USER, cfg.SMTP_PASS)
-            server.sendmail(cfg.SMTP_FROM, to_email, msg.as_string())
+    resp = httpx.post(
+        "https://api.resend.com/emails",
+        headers={"Authorization": f"Bearer {cfg.RESEND_API_KEY}"},
+        json={
+            "from":    cfg.EMAIL_FROM,
+            "to":      [to_email],
+            "subject": subject,
+            "html":    html,
+        },
+        timeout=30.0,
+    )
+    resp.raise_for_status()
