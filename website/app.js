@@ -3,7 +3,7 @@
 // Replace the production fallback with your deployed backend URL once you have one.
 const BACKEND_URL = ["localhost", "127.0.0.1"].includes(window.location.hostname)
   ? "http://localhost:8000"
-  : "https://api.projectdora.com";
+  : "https://project-dora-production.up.railway.app";
 
 // Replace this with a real installer download link (e.g. GitHub releases).
 const INSTALLER_URL = "#";  // TODO: add your installer download link
