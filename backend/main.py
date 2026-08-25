@@ -161,7 +161,10 @@ async def stripe_webhook(request: Request):
         raise HTTPException(status_code=400, detail="Invalid signature or payload")
 
     etype = event["type"]
-    data  = event["data"]["object"]
+    # This Stripe SDK version returns a typed object (e.g. stripe.checkout.Session)
+    # here, not a plain dict — .get() raises AttributeError on it. Convert once
+    # up front so every .get()/[] access below behaves like ordinary dict access.
+    data  = event["data"]["object"].to_dict()
 
     if etype == "checkout.session.completed":
         sub_id = data.get("subscription")
