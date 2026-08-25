@@ -22,7 +22,8 @@ class BackendConfig:
     ELEVENLABS_MODEL_ID:    str   # e.g. eleven_multilingual_v2
     STRIPE_SECRET_KEY:      str
     STRIPE_WEBHOOK_SECRET:  str
-    STRIPE_PRICE_ID:        str   # price_xxx for the £30/month plan
+    STRIPE_SETUP_PRICE_ID:  str   # price_xxx for the one-time £150 setup fee
+    STRIPE_PRICE_ID:        str   # price_xxx for the £20/month recurring plan
     ADMIN_TOKEN:            str   # secret token for /admin endpoints
     BASE_URL:               str   # e.g. https://api.projectdora.com (backend)
     SITE_URL:               str   # e.g. https://projectdora.com (website)
@@ -43,6 +44,7 @@ def _load() -> BackendConfig:
         ELEVENLABS_MODEL_ID   = os.environ.get("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2"),
         STRIPE_SECRET_KEY     = os.environ["STRIPE_SECRET_KEY"],
         STRIPE_WEBHOOK_SECRET = os.environ["STRIPE_WEBHOOK_SECRET"],
+        STRIPE_SETUP_PRICE_ID = os.environ["STRIPE_SETUP_PRICE_ID"],
         STRIPE_PRICE_ID       = os.environ["STRIPE_PRICE_ID"],
         ADMIN_TOKEN           = os.environ["ADMIN_TOKEN"],
         BASE_URL              = os.environ.get("BASE_URL", "http://localhost:8000"),

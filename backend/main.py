@@ -117,13 +117,21 @@ class CheckoutRequest(BaseModel):
 
 @app.post("/checkout")
 async def create_checkout(body: CheckoutRequest):
-    """Return a Stripe Checkout URL. Garage visits it to subscribe."""
+    """Return a Stripe Checkout URL. Garage visits it to subscribe.
+
+    Charges a one-time setup fee alongside the recurring subscription in a
+    single Checkout session — Stripe supports mixing a one-time price into
+    a mode="subscription" session; the one-time price is billed once on
+    the first invoice and never recurs."""
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
             customer_email=body.email,
-            line_items=[{"price": cfg.STRIPE_PRICE_ID, "quantity": 1}],
+            line_items=[
+                {"price": cfg.STRIPE_SETUP_PRICE_ID, "quantity": 1},
+                {"price": cfg.STRIPE_PRICE_ID, "quantity": 1},
+            ],
             success_url=f"{cfg.SITE_URL}/success.html?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{cfg.SITE_URL}/cancelled.html",
             metadata={"email": body.email},

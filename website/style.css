@@ -308,6 +308,8 @@ h2 {
   color: var(--fg);
 }
 .price-period { color: var(--fg-dim); font-size: 16px; }
+.price-row-sub { margin-top: -20px; margin-bottom: 28px; }
+.price-plus { font-size: 22px; font-weight: 700; color: var(--fg); }
 .price-features {
   list-style: none;
   margin-bottom: 28px;
