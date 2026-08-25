@@ -7,7 +7,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from backend.settings import cfg
+from settings import cfg
 
 
 def send_licence_email(to_email: str, licence_key: str) -> None:
@@ -43,6 +43,12 @@ def send_licence_email(to_email: str, licence_key: str) -> None:
     msg["To"]      = to_email
     msg.attach(MIMEText(html, "html"))
 
-    with smtplib.SMTP_SSL(cfg.SMTP_HOST, cfg.SMTP_PORT) as server:
-        server.login(cfg.SMTP_USER, cfg.SMTP_PASS)
-        server.sendmail(cfg.SMTP_FROM, to_email, msg.as_string())
+    if cfg.SMTP_PORT == 465:
+        with smtplib.SMTP_SSL(cfg.SMTP_HOST, cfg.SMTP_PORT) as server:
+            server.login(cfg.SMTP_USER, cfg.SMTP_PASS)
+            server.sendmail(cfg.SMTP_FROM, to_email, msg.as_string())
+    else:
+        with smtplib.SMTP(cfg.SMTP_HOST, cfg.SMTP_PORT) as server:
+            server.starttls()
+            server.login(cfg.SMTP_USER, cfg.SMTP_PASS)
+            server.sendmail(cfg.SMTP_FROM, to_email, msg.as_string())

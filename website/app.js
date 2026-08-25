@@ -1,6 +1,9 @@
 // ── Config ─────────────────────────────────────────────────────────────────
-// Replace this with your deployed backend URL once you have one.
-const BACKEND_URL = "https://api.projectdora.com";
+// Auto-detects localhost so the same file works for local testing and prod.
+// Replace the production fallback with your deployed backend URL once you have one.
+const BACKEND_URL = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+  ? "http://localhost:8000"
+  : "https://api.projectdora.com";
 
 // Replace this with a real installer download link (e.g. GitHub releases).
 const INSTALLER_URL = "#";  // TODO: add your installer download link
