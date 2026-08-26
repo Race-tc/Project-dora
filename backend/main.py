@@ -11,14 +11,18 @@ Routes:
   POST /ai/chat           Proxy Dora's tool-using chat call (requires licence key)
   POST /voice/transcribe  Proxy speech-to-text via OpenAI (requires licence key)
   POST /voice/synthesize  Proxy text-to-speech via ElevenLabs (requires licence key)
+  GET  /version           Latest desktop app version + download link
   GET  /validate/{key}    Check if a licence key is active
   GET  /portal/{key}      Generate a Stripe customer portal link
+  POST /waitlist          Join the beta waitlist (email only, no payment)
   GET  /admin/licences    List all licences (requires admin token)
   POST /admin/issue       Manually issue a licence (requires admin token)
+  POST /admin/launch-beta Email a beta key to everyone on the waitlist (requires admin token)
 """
 from __future__ import annotations
 
 import hmac
+from datetime import datetime, timezone
 
 import stripe
 from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile, status
@@ -96,6 +100,12 @@ def _require_admin(x_admin_token: str = Header(...)):
         raise HTTPException(status_code=403, detail="Invalid admin token")
 
 
+def _beta_expired(row: db.sqlite3.Row) -> bool:
+    if row["licence_type"] != "beta":
+        return False
+    return datetime.now(timezone.utc) > datetime.fromisoformat(cfg.BETA_END_DATE)
+
+
 def _require_licence(x_licence_key: str = Header(...)) -> db.sqlite3.Row:
     row = db.get_licence(x_licence_key)
     if not row:
@@ -105,6 +115,11 @@ def _require_licence(x_licence_key: str = Header(...)) -> db.sqlite3.Row:
             status_code=402,
             detail=f"Licence is {row['status']}. "
                    "Renew your subscription at projectdora.com/billing",
+        )
+    if _beta_expired(row):
+        raise HTTPException(
+            status_code=402,
+            detail="The DORA beta has ended. Subscribe at projectdora.com to keep using DORA.",
         )
     return row
 
@@ -141,6 +156,26 @@ async def create_checkout(body: CheckoutRequest):
             status_code=502, detail=f"Stripe checkout error: {exc.user_message or str(exc)}"
         ) from exc
     return {"checkout_url": session.url}
+
+
+# ── Waitlist ──────────────────────────────────────────────────────────────────
+
+class WaitlistRequest(BaseModel):
+    email: EmailStr
+
+
+@app.post("/waitlist")
+async def join_waitlist(body: WaitlistRequest):
+    """Add an email to the beta waitlist. Idempotent — signing up twice just
+    re-sends the confirmation rather than erroring, since a visitor has no
+    way to tell whether their first attempt actually went through."""
+    db.add_to_waitlist(body.email)
+    try:
+        from email_sender import send_waitlist_confirmation_email
+        send_waitlist_confirmation_email(body.email)
+    except Exception as exc:
+        print(f"Waitlist confirmation email failed for {body.email}: {exc}")
+    return {"ok": True}
 
 
 # ── Stripe Webhook ────────────────────────────────────────────────────────────
@@ -215,12 +250,28 @@ async def stripe_webhook(request: Request):
     return {"ok": True}
 
 
+# ── Version check ─────────────────────────────────────────────────────────────
+# Desktop app polls this on startup to show an "update available" prompt.
+# It never triggers a download itself — bumping LATEST_VERSION/DOWNLOAD_URL/
+# RELEASE_NOTES on Railway is a separate, deliberate step from deploying
+# backend code, so shipping a new desktop build doesn't reach any user
+# until you choose to announce it here.
+
+@app.get("/version")
+async def get_version():
+    return {
+        "latest": cfg.LATEST_VERSION,
+        "download_url": cfg.DOWNLOAD_URL,
+        "notes": cfg.RELEASE_NOTES,
+    }
+
+
 # ── Licence validation ────────────────────────────────────────────────────────
 
 @app.get("/validate/{key}")
 async def validate_licence(key: str):
     row = db.get_licence(key)
-    if not row or row["status"] != "active":
+    if not row or row["status"] != "active" or _beta_expired(row):
         return {"valid": False}
     return {"valid": True, "email": row["email"]}
 
@@ -608,3 +659,32 @@ async def admin_issue(body: IssueRequest):
         emailed = False
         print(f"Email failed: {exc}")
     return {"licence_key": key, "emailed": emailed}
+
+
+@app.post("/admin/launch-beta", dependencies=[Depends(_require_admin)])
+async def admin_launch_beta():
+    """Issue a beta licence key to everyone on the waitlist who hasn't
+    already been sent one, and email it to them. Call this once, on/after
+    the beta launch date — safe to call again later (e.g. if it partway
+    fails) since already-notified rows are skipped."""
+    from email_sender import send_beta_key_email
+
+    pending = db.list_pending_waitlist()
+    issued, failed = 0, []
+    for row in pending:
+        email = row["email"]
+        existing = db.get_beta_licence_by_email(email)
+        key = existing["licence_key"] if existing else db.create_licence(
+            email=email, note="beta waitlist", licence_type="beta"
+        )
+        try:
+            send_beta_key_email(email, key, cfg.BETA_END_DATE)
+            db.mark_waitlist_notified(email)
+            issued += 1
+        except Exception as exc:
+            # Licence key is already in the DB even if the email failed —
+            # don't mark notified, so a re-run of this endpoint retries it.
+            failed.append(email)
+            print(f"Beta key email failed for {email}: {exc}")
+
+    return {"issued": issued, "failed": failed, "total_pending": len(pending)}

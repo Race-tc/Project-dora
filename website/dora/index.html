@@ -20,7 +20,7 @@
       <a href="#pricing">Pricing</a>
       <a href="mailto:support@projectdora.com">Support</a>
     </div>
-    <a href="#pricing" class="btn btn-sm">Get Started</a>
+    <a href="#" class="btn btn-sm" onclick="openWaitlist(); return false;">Join Waitlist</a>
   </div>
 </nav>
 
@@ -28,7 +28,7 @@
 <section class="hero">
   <div class="hero-glow"></div>
   <div class="container">
-    <div class="badge">Professional ECU Calibration Software</div>
+    <div class="badge">Free Beta Launches 16 September</div>
     <h1>AI-Powered Tuning.<br /><span class="accent">Built for Garages.</span></h1>
     <p class="hero-sub">
       DORA reads your engine data logs, analyses fuel trims, boost pressure,
@@ -36,10 +36,10 @@
       No guesswork. No wasted dyno time.
     </p>
     <div class="hero-actions">
-      <a href="#pricing" class="btn btn-lg">Start for £150</a>
+      <a href="#" class="btn btn-lg" onclick="openWaitlist(); return false;">Join the Waitlist</a>
       <a href="#features" class="btn btn-ghost btn-lg">See what it does →</a>
     </div>
-    <div class="hero-note">No contract. Cancel any time. Key delivered by email.</div>
+    <div class="hero-note">Free during the beta. No card required to join the waitlist.</div>
   </div>
 </section>
 
@@ -143,10 +143,10 @@
 <section class="pricing" id="pricing">
   <div class="container">
     <h2>Simple pricing</h2>
-    <p class="section-sub">One plan. Everything included. No surprises.</p>
+    <p class="section-sub">Free during the beta. This is what it costs afterwards.</p>
 
     <div class="pricing-card">
-      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-badge">After the Beta</div>
       <div class="price-row">
         <span class="price">£150</span>
         <span class="price-period">one-time setup</span>
@@ -165,13 +165,13 @@
         <li><span class="check">✓</span> Email support</li>
         <li><span class="check">✓</span> All future updates included</li>
       </ul>
-      <button class="btn btn-lg btn-full" id="buy-btn" onclick="startCheckout()">
-        Subscribe &amp; Download
+      <button class="btn btn-lg btn-full" id="buy-btn" onclick="openWaitlist()">
+        Join the Waitlist
       </button>
       <p class="pricing-note">
-        £150 charged once today, then £20/month from your next billing date.<br />
-        Licence key emailed instantly after payment.<br />
-        No contract — cancel any time from your billing portal.
+        Free for everyone during the beta (16 Sept – 28 Oct).<br />
+        Beta key emailed the moment it launches.<br />
+        No card required. No contract, ever.
       </p>
     </div>
   </div>
@@ -184,8 +184,8 @@
     <div class="faq-list">
 
       <details class="faq-item">
-        <summary>How do I get the software after paying?</summary>
-        <p>Your licence key is emailed to you within seconds of payment. Download the installer from this page, install it, open Settings in the app, and paste your key. That's it — fully unlocked.</p>
+        <summary>How do I get the software?</summary>
+        <p>Join the waitlist with your email — no card needed. When the beta launches on 16 September, we email everyone a free licence key and the installer link. Paste your key into Settings and you're fully unlocked.</p>
       </details>
 
       <details class="faq-item">
@@ -209,8 +209,8 @@
       </details>
 
       <details class="faq-item">
-        <summary>What if I want to cancel?</summary>
-        <p>Cancel any time from the billing portal link in your welcome email — no phone calls, no forms. Your access continues until the end of the billing period.</p>
+        <summary>What happens when the beta ends?</summary>
+        <p>Beta keys work through 28 October. We'll email everyone before then with the option to move to a paid plan — nothing is charged automatically, and there's no card on file to cancel.</p>
       </details>
 
     </div>
@@ -221,11 +221,11 @@
 <section class="download" id="download">
   <div class="container download-inner">
     <div>
-      <h2>Ready to install?</h2>
-      <p>Download the installer, subscribe above to get your licence key, then paste it into Settings. You're tuning within minutes.</p>
+      <h2>Ready for the beta?</h2>
+      <p>Join the waitlist now. We'll email your free beta key and the download link the moment it launches on 16 September.</p>
     </div>
-    <a href="#" class="btn btn-lg" id="download-btn">
-      Download for Windows
+    <a href="#" class="btn btn-lg" onclick="openWaitlist(); return false;">
+      Join the Waitlist
     </a>
   </div>
 </section>
@@ -252,6 +252,29 @@
     <div class="modal-btns">
       <button class="btn btn-lg btn-full" id="modal-submit" onclick="submitCheckout()">Continue to Payment →</button>
       <button class="btn-ghost-sm" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Waitlist modal overlay ────────────────────────────────────────────────── -->
+<div id="waitlist-overlay" class="overlay hidden">
+  <div class="modal">
+    <div id="waitlist-form">
+      <h3>Join the beta waitlist</h3>
+      <p>Free, no card required. We'll email your beta key the moment DORA launches on 16 September.</p>
+      <input type="email" id="waitlist-email" placeholder="workshop@example.com" />
+      <div id="waitlist-error" class="modal-error hidden"></div>
+      <div class="modal-btns">
+        <button class="btn btn-lg btn-full" id="waitlist-submit" onclick="submitWaitlist()">Join the Waitlist →</button>
+        <button class="btn-ghost-sm" onclick="closeWaitlistModal()">Cancel</button>
+      </div>
+    </div>
+    <div id="waitlist-success" class="hidden">
+      <h3>You're on the list</h3>
+      <p>Check your inbox for a confirmation. Your free beta key arrives on 16 September.</p>
+      <div class="modal-btns">
+        <button class="btn btn-lg btn-full" onclick="closeWaitlistModal()">Done</button>
+      </div>
     </div>
   </div>
 </div>
