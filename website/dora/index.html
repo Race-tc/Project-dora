@@ -18,6 +18,7 @@
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
+      <a href="marketplace.html">Marketplace</a>
       <a href="mailto:support@projectdora.com">Support</a>
     </div>
     <a href="#" class="btn btn-sm" onclick="openWaitlist(); return false;">Join Waitlist</a>
@@ -235,6 +236,7 @@
   <div class="container footer-inner">
     <div class="logo"><span class="accent">DORA</span></div>
     <div class="footer-links">
+      <a href="marketplace.html">Marketplace</a>
       <a href="mailto:support@projectdora.com">Support</a>
       <a href="#faq">FAQ</a>
     </div>
@@ -257,25 +259,17 @@
 </div>
 
 <!-- ── Waitlist modal overlay ────────────────────────────────────────────────── -->
+<!-- Form UI is Cognito Forms (embedded below); submissions are also relayed to
+     our own backend via Cognito's webhook -> POST /waitlist/cognito, so the
+     existing beta-launch pipeline (/admin/launch-beta) keeps working unchanged. -->
 <div id="waitlist-overlay" class="overlay hidden">
-  <div class="modal">
-    <div id="waitlist-form">
-      <h3>Join the beta waitlist</h3>
-      <p>Free, no card required. We'll email your beta key the moment DORA launches on 16 September.</p>
-      <input type="email" id="waitlist-email" placeholder="workshop@example.com" />
-      <div id="waitlist-error" class="modal-error hidden"></div>
-      <div class="modal-btns">
-        <button class="btn btn-lg btn-full" id="waitlist-submit" onclick="submitWaitlist()">Join the Waitlist →</button>
-        <button class="btn-ghost-sm" onclick="closeWaitlistModal()">Cancel</button>
-      </div>
+  <div class="modal modal-cognito">
+    <h3>Join the beta waitlist</h3>
+    <p>Free, no card required. We'll email your beta key the moment DORA launches on 16 September.</p>
+    <div id="cognito-waitlist-form">
+      <script src="https://www.cognitoforms.com/f/seamless.js" data-key="h4J-lgH9EEScdpsNLXSsZQ" data-form="1"></script>
     </div>
-    <div id="waitlist-success" class="hidden">
-      <h3>You're on the list</h3>
-      <p>Check your inbox for a confirmation. Your free beta key arrives on 16 September.</p>
-      <div class="modal-btns">
-        <button class="btn btn-lg btn-full" onclick="closeWaitlistModal()">Done</button>
-      </div>
-    </div>
+    <button class="btn-ghost-sm" onclick="closeWaitlistModal()">Close</button>
   </div>
 </div>
 

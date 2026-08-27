@@ -92,14 +92,14 @@ function showError(elId, msg) {
 // Checkout is paused pre-launch — every "buy" CTA on the page currently
 // opens this instead. Re-point them at startCheckout() once the beta ends
 // and paid signup reopens; the checkout modal/flow above is untouched.
+//
+// The form itself is embedded Cognito Forms (see the modal markup) — it
+// handles its own validation, submission, and success state. Cognito's
+// webhook relays each submission to POST /waitlist/cognito on our backend,
+// so /admin/launch-beta still has every signup to work from on launch day.
 
 function openWaitlist() {
   document.getElementById("waitlist-overlay").classList.remove("hidden");
-  document.getElementById("waitlist-email").focus();
-  document.getElementById("waitlist-error").classList.add("hidden");
-  document.getElementById("waitlist-success").classList.add("hidden");
-  document.getElementById("waitlist-email").value = "";
-  document.getElementById("waitlist-form").classList.remove("hidden");
 }
 
 function closeWaitlistModal() {
@@ -110,46 +110,4 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("waitlist-overlay").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeWaitlistModal();
   });
-
-  document.getElementById("waitlist-email").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") submitWaitlist();
-  });
 });
-
-async function submitWaitlist() {
-  const emailEl  = document.getElementById("waitlist-email");
-  const submitEl = document.getElementById("waitlist-submit");
-  const errorEl  = document.getElementById("waitlist-error");
-  const email    = emailEl.value.trim();
-
-  if (!email || !email.includes("@")) {
-    showError("waitlist-error", "Please enter a valid email address.");
-    return;
-  }
-
-  submitEl.disabled = true;
-  submitEl.textContent = "Joining…";
-  errorEl.classList.add("hidden");
-
-  try {
-    const resp = await fetch(`${BACKEND_URL}/waitlist`, {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ email }),
-    });
-
-    if (!resp.ok) {
-      const data = await resp.json().catch(() => ({}));
-      throw new Error(data.detail || `Server error (${resp.status})`);
-    }
-
-    document.getElementById("waitlist-form").classList.add("hidden");
-    document.getElementById("waitlist-success").classList.remove("hidden");
-
-  } catch (err) {
-    showError("waitlist-error", err.message || "Something went wrong. Please try again.");
-  } finally {
-    submitEl.disabled = false;
-    submitEl.textContent = "Join the Waitlist →";
-  }
-}

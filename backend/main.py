@@ -15,6 +15,12 @@ Routes:
   GET  /validate/{key}    Check if a licence key is active
   GET  /portal/{key}      Generate a Stripe customer portal link
   POST /waitlist          Join the beta waitlist (email only, no payment)
+  POST /waitlist/cognito  Cognito Forms webhook — relays its submissions into the same waitlist
+  GET  /marketplace/tunes             List/search community tunes (public)
+  GET  /marketplace/tunes/{id}        Tune detail (public)
+  POST /marketplace/tunes             Upload a tune (requires licence key)
+  GET  /marketplace/tunes/{id}/download  Download a tune file (public)
+  DELETE /marketplace/tunes/{id}      Delete a tune (owner licence key or admin token)
   GET  /admin/licences    List all licences (requires admin token)
   POST /admin/issue       Manually issue a licence (requires admin token)
   POST /admin/launch-beta Email a beta key to everyone on the waitlist (requires admin token)
@@ -22,10 +28,11 @@ Routes:
 from __future__ import annotations
 
 import hmac
+import re
 from datetime import datetime, timezone
 
 import stripe
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Request, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, EmailStr, field_validator
@@ -83,7 +90,7 @@ async def _limit_request_size(request: Request, call_next):
     # that size. This only catches requests with an honest Content-Length
     # header (a fast pre-buffering check, same approach the voice endpoint
     # already uses); it doesn't defend chunked-encoding bodies with none.
-    if request.url.path != "/voice/transcribe":
+    if request.url.path not in ("/voice/transcribe", "/marketplace/tunes"):
         content_length = request.headers.get("content-length")
         if content_length and int(content_length) > _MAX_REQUEST_BYTES:
             return JSONResponse(status_code=413, content={"detail": "Request body too large"})
@@ -164,17 +171,69 @@ class WaitlistRequest(BaseModel):
     email: EmailStr
 
 
-@app.post("/waitlist")
-async def join_waitlist(body: WaitlistRequest):
-    """Add an email to the beta waitlist. Idempotent — signing up twice just
-    re-sends the confirmation rather than erroring, since a visitor has no
-    way to tell whether their first attempt actually went through."""
-    db.add_to_waitlist(body.email)
+def _join_waitlist(email: str) -> None:
+    """Shared by both waitlist entry points (POST /waitlist and the Cognito
+    Forms webhook). Idempotent — signing up twice just re-sends the
+    confirmation rather than erroring, since a visitor has no way to tell
+    whether their first attempt actually went through."""
+    db.add_to_waitlist(email)
     try:
         from email_sender import send_waitlist_confirmation_email
-        send_waitlist_confirmation_email(body.email)
+        send_waitlist_confirmation_email(email)
     except Exception as exc:
-        print(f"Waitlist confirmation email failed for {body.email}: {exc}")
+        print(f"Waitlist confirmation email failed for {email}: {exc}")
+
+
+@app.post("/waitlist")
+async def join_waitlist(body: WaitlistRequest):
+    """Add an email to the beta waitlist."""
+    _join_waitlist(body.email)
+    return {"ok": True}
+
+
+_EMAIL_RE = re.compile(r"[^\s@\"]+@[^\s@\"]+\.[^\s@\"]+")
+
+
+def _find_email(value) -> str | None:
+    """Cognito Forms' webhook payload nests the submitted fields under keys
+    that depend entirely on how the form was built in their editor (which
+    this backend has no visibility into) — so rather than assume a field
+    name, walk the whole JSON body and take the first value that looks like
+    an email address."""
+    if isinstance(value, str):
+        m = _EMAIL_RE.search(value)
+        return m.group(0) if m else None
+    if isinstance(value, dict):
+        for v in value.values():
+            found = _find_email(v)
+            if found:
+                return found
+    elif isinstance(value, list):
+        for v in value:
+            found = _find_email(v)
+            if found:
+                return found
+    return None
+
+
+@app.post("/waitlist/cognito")
+async def cognito_waitlist_webhook(request: Request):
+    """Receives Cognito Forms' "Post JSON Data to a Website" webhook so the
+    waitlist form can live in Cognito (nicer form-building UI) while
+    /admin/launch-beta still has every signup in our own database to work
+    from on launch day. No shared secret to verify — Cognito doesn't sign
+    these requests, and worst case a forged call just adds one extra email
+    to a free waitlist, which isn't worth blocking on."""
+    try:
+        payload = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    email = _find_email(payload)
+    if not email:
+        raise HTTPException(status_code=400, detail="No email address found in payload")
+
+    _join_waitlist(email)
     return {"ok": True}
 
 
@@ -632,6 +691,164 @@ async def voice_synthesize(
     db.log_request(licence["licence_key"], len(body.text), kind="voice_tts")
 
     return Response(content=resp.content, media_type="application/octet-stream")
+
+
+# ── Marketplace ───────────────────────────────────────────────────────────────
+#
+# Community tune sharing. Browsing/downloading is public (no licence needed —
+# it's a marketing draw during the beta); uploading requires a valid licence
+# key so every tune is attributable to an account, same identity system as
+# the AI routes above. Files are stored as BLOBs in dora.db rather than on
+# local disk/S3 — they ride on whatever already keeps that DB persisted
+# across deploys, no new infra.
+
+_MAX_TUNE_FILE_BYTES = 20 * 1024 * 1024
+_ALLOWED_TUNE_EXTENSIONS = {
+    ".bin", ".hex", ".ols", ".kp", ".adf", ".map", ".cal", ".a2l", ".xdf", ".mpc", ".dam", ".zip",
+    # .json/.rom: the desktop app's own map export/attach dialogs already treat
+    # these as valid tune formats (see ui/workflow_panels.py's submit/download
+    # dialogs) — the allowlist has to cover what that client actually sends.
+    ".json", ".rom",
+}
+
+
+def _tune_dict(row: db.sqlite3.Row) -> dict:
+    # Deliberately omits licence_key and uploader_email — those stay
+    # server-side for moderation/ownership checks, never in a public response.
+    return {
+        "id":            row["id"],
+        "title":         row["title"],
+        "author_name":   row["author_name"],
+        "vehicle_make":  row["vehicle_make"],
+        "vehicle_model": row["vehicle_model"],
+        "vehicle_year":  row["vehicle_year"],
+        "ecu_type":      row["ecu_type"],
+        "engine":        row["engine"],
+        "mods":          row["mods"],
+        "power_gain":    row["power_gain"],
+        "hp_before":     row["hp_before"],
+        "hp_after":      row["hp_after"],
+        "description":   row["description"],
+        "tags":          [t for t in row["tags"].split(",") if t],
+        "filename":      row["filename"],
+        "file_size":     row["file_size"],
+        "downloads":     row["downloads"],
+        "created_at":    row["created_at"],
+    }
+
+
+@app.get("/marketplace/tunes")
+async def list_tunes(q: str = ""):
+    rows = db.list_tunes(q.strip())
+    return [_tune_dict(r) for r in rows]
+
+
+@app.get("/marketplace/tunes/{tune_id}")
+async def get_tune(tune_id: int):
+    row = db.get_tune(tune_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    return _tune_dict(row)
+
+
+@app.post("/marketplace/tunes")
+async def upload_tune(
+    request: Request,
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    author_name: str = Form(""),
+    vehicle_make: str = Form(""),
+    vehicle_model: str = Form(""),
+    vehicle_year: str = Form(""),
+    ecu_type: str = Form(""),
+    engine: str = Form(""),
+    mods: str = Form(""),
+    power_gain: str = Form(""),
+    hp_before: float | None = Form(None),
+    hp_after: float | None = Form(None),
+    description: str = Form(""),
+    tags: str = Form(""),
+    licence: db.sqlite3.Row = Depends(_require_licence),
+):
+    title = title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Title is required")
+
+    import pathlib
+    ext = pathlib.Path(file.filename or "").suffix.lower()
+    if ext not in _ALLOWED_TUNE_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{ext or '(none)'}'. Allowed: {sorted(_ALLOWED_TUNE_EXTENSIONS)}",
+        )
+
+    # Mirrors /voice/transcribe's belt-and-braces size check: reject up front
+    # on an honest Content-Length, re-check after read() as a backstop for
+    # chunked-encoding uploads that omit it.
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > _MAX_TUNE_FILE_BYTES:
+        raise HTTPException(status_code=413, detail="Tune file too large (max 20 MB)")
+
+    file_bytes = await file.read()
+    if len(file_bytes) > _MAX_TUNE_FILE_BYTES:
+        raise HTTPException(status_code=413, detail="Tune file too large (max 20 MB)")
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    # Public byline never shows the account email — fall back to the
+    # licence's email local-part only as a default display name.
+    display_name = author_name.strip() or licence["email"].split("@")[0]
+
+    tune_id = db.create_tune(
+        title=title,
+        author_name=display_name,
+        uploader_email=licence["email"],
+        licence_key=licence["licence_key"],
+        filename=file.filename or "tune",
+        file_blob=file_bytes,
+        vehicle_make=vehicle_make.strip(),
+        vehicle_model=vehicle_model.strip(),
+        vehicle_year=vehicle_year.strip(),
+        ecu_type=ecu_type.strip(),
+        engine=engine.strip(),
+        mods=mods.strip(),
+        power_gain=power_gain.strip(),
+        hp_before=hp_before,
+        hp_after=hp_after,
+        description=description.strip(),
+        tags=",".join(t.strip() for t in tags.split(",") if t.strip()),
+    )
+    return {"id": tune_id}
+
+
+@app.get("/marketplace/tunes/{tune_id}/download")
+async def download_tune(tune_id: int):
+    row = db.get_tune_file(tune_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    db.increment_downloads(tune_id)
+    return Response(
+        content=row["file_blob"],
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{row["filename"]}"'},
+    )
+
+
+@app.delete("/marketplace/tunes/{tune_id}")
+async def delete_tune(
+    tune_id: int,
+    x_licence_key: str = Header(default=""),
+    x_admin_token: str = Header(default=""),
+):
+    row = db.get_tune(tune_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    is_owner = bool(x_licence_key) and hmac.compare_digest(x_licence_key, row["licence_key"])
+    is_admin = bool(x_admin_token) and hmac.compare_digest(x_admin_token, cfg.ADMIN_TOKEN)
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Not authorised to delete this tune")
+    db.delete_tune(tune_id)
+    return {"ok": True}
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────
