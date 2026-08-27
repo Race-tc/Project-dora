@@ -22,6 +22,7 @@ Routes:
   GET  /marketplace/tunes/{id}/download  Download a tune file (public)
   DELETE /marketplace/tunes/{id}      Delete a tune (owner licence key or admin token)
   GET  /admin/licences    List all licences (requires admin token)
+  GET  /admin/waitlist    List pending (not-yet-notified) waitlist signups (requires admin token)
   POST /admin/issue       Manually issue a licence (requires admin token)
   POST /admin/launch-beta Email a beta key to everyone on the waitlist (requires admin token)
 """
@@ -857,6 +858,15 @@ async def delete_tune(
 @app.get("/admin/licences", dependencies=[Depends(_require_admin)])
 async def admin_list():
     rows = db.list_licences()
+    return [dict(r) for r in rows]
+
+
+@app.get("/admin/waitlist", dependencies=[Depends(_require_admin)])
+async def admin_waitlist():
+    """Read-only visibility into who's pending — lets you sanity-check the
+    Google Forms relay (or count signups) without touching /admin/launch-beta,
+    which actually mints and emails keys."""
+    rows = db.list_pending_waitlist()
     return [dict(r) for r in rows]
 
 
