@@ -441,12 +441,12 @@ h2 {
 .modal h3 { font-family: var(--display); font-weight: 600; font-size: 21px; margin-bottom: 8px; }
 .modal p { color: var(--fg-dim); font-size: 14px; margin-bottom: 20px; }
 
-.modal-cognito {
+.modal-embed {
   max-width: 480px;
   max-height: 85vh;
   overflow-y: auto;
 }
-.modal-cognito .btn-ghost-sm { margin-top: 16px; }
+.modal-embed .btn-ghost-sm { margin-top: 16px; }
 .modal input[type="email"] {
   width: 100%;
   background: var(--bg-panel);

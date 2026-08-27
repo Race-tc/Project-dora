@@ -15,7 +15,7 @@ Routes:
   GET  /validate/{key}    Check if a licence key is active
   GET  /portal/{key}      Generate a Stripe customer portal link
   POST /waitlist          Join the beta waitlist (email only, no payment)
-  POST /waitlist/cognito  Cognito Forms webhook — relays its submissions into the same waitlist
+  POST /waitlist/webhook  External form webhook (e.g. Google Forms Apps Script) — relays into the same waitlist
   GET  /marketplace/tunes             List/search community tunes (public)
   GET  /marketplace/tunes/{id}        Tune detail (public)
   POST /marketplace/tunes             Upload a tune (requires licence key)
@@ -216,14 +216,15 @@ def _find_email(value) -> str | None:
     return None
 
 
-@app.post("/waitlist/cognito")
-async def cognito_waitlist_webhook(request: Request):
-    """Receives Cognito Forms' "Post JSON Data to a Website" webhook so the
-    waitlist form can live in Cognito (nicer form-building UI) while
-    /admin/launch-beta still has every signup in our own database to work
-    from on launch day. No shared secret to verify — Cognito doesn't sign
-    these requests, and worst case a forged call just adds one extra email
-    to a free waitlist, which isn't worth blocking on."""
+@app.post("/waitlist/webhook")
+async def external_waitlist_webhook(request: Request):
+    """Receives a relayed submission from whatever external form is currently
+    embedded in the waitlist modal (a Google Forms Apps Script trigger as of
+    this writing) so the form itself can live wherever's easiest to build,
+    while /admin/launch-beta still has every signup in our own database to
+    work from on launch day. No shared secret to verify — worst case a
+    forged call just adds one extra email to a free waitlist, which isn't
+    worth blocking on."""
     try:
         payload = await request.json()
     except Exception:
