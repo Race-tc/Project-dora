@@ -60,10 +60,11 @@ async function submitCheckout() {
   errorEl.classList.add("hidden");
 
   try {
+    const tier = document.body.dataset.tier || "shop";
     const resp = await fetch(`${BACKEND_URL}/checkout`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ email }),
+      body:    JSON.stringify({ email, tier }),
     });
 
     if (!resp.ok) {

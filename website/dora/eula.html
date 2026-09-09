@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>End User Licence Agreement — DORA</title>
+  <meta name="description" content="End User Licence Agreement and Safety Acknowledgment for the DORA ECU calibration software, operated by RACE." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+  <!-- .legal-* rules live in style.css, shared with terms.html/privacy.html -->
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo" style="text-decoration:none"><span class="accent">DORA</span></a>
+    <div class="nav-links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#pricing">Pricing</a>
+      <a href="marketplace.html">Marketplace</a>
+      <a href="mailto:support@projectdora.com">Support</a>
+    </div>
+    <a href="index.html" class="btn btn-sm">Back to site</a>
+  </div>
+</nav>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────────────── -->
+<section class="legal-header">
+  <div class="container">
+    <div class="badge">Legal</div>
+    <h1>End User <span class="accent">Licence Agreement</span></h1>
+    <div class="legal-updated">Last updated: 28 August 2026</div>
+  </div>
+</section>
+
+<!-- ── BODY ────────────────────────────────────────────────────────────────── -->
+<section class="legal-body">
+  <div class="container legal-layout">
+
+    <nav class="legal-toc">
+      <a href="#acceptance">1. Acceptance</a>
+      <a href="#licence-grant">2. Licence Grant</a>
+      <a href="#restrictions">3. Restrictions</a>
+      <a href="#safety">4. Safety Acknowledgment</a>
+      <a href="#disclaimer">5. Disclaimer &amp; Liability</a>
+      <a href="#term">6. Term &amp; Termination</a>
+      <a href="#law">7. Governing Law</a>
+      <a href="#contact">8. Contact</a>
+    </nav>
+
+    <div class="legal-content">
+
+      <p>
+        This End User Licence Agreement ("<strong>EULA</strong>") is a legal agreement between you (or
+        the workshop you represent) and RACE, the workshop tools company behind DORA ("<strong>RACE</strong>",
+        "<strong>we</strong>", "<strong>us</strong>"), governing your installation and use of the DORA
+        desktop application ("<strong>Software</strong>"), including during the free public beta. It
+        supplements — and should be read alongside — the general
+        <a href="terms.html">Terms &amp; Conditions</a> that govern the wider Service.
+      </p>
+      <div class="legal-placeholder">
+        Placeholder — this EULA has not yet been reviewed by a solicitor. Have it and the Safety
+        Acknowledgment below reviewed before relying on it commercially, per the business setup
+        checklist. Replace with RACE's registered company details once incorporated.
+      </div>
+
+      <h2 id="acceptance">1. Acceptance</h2>
+      <p>
+        By installing, activating with a licence key, or otherwise using the Software — including a free
+        beta key — you confirm that you have read, understood, and agree to be bound by this EULA, in
+        particular the Safety Acknowledgment in <a href="#safety">Section 4</a>. If you do not agree, do
+        not install or use the Software. If you are accepting on behalf of a workshop or business, you
+        confirm you have authority to bind that business.
+      </p>
+
+      <h2 id="licence-grant">2. Licence Grant</h2>
+      <p>
+        Subject to this EULA, RACE grants you a limited, non-exclusive, non-transferable, revocable
+        licence to install and use the Software on behalf of one workshop (Shop plan) or one individual
+        tuner (Solo plan), tied to a single active licence key (including beta keys, which are valid only
+        for the published Beta Period). This licence does not transfer any ownership in the Software to you.
+      </p>
+
+      <h2 id="restrictions">3. Restrictions</h2>
+      <p>You must not, and must not permit others to:</p>
+      <ul>
+        <li>copy, resell, sublicense, rent, or lease the Software or a licence key to any third party;</li>
+        <li>reverse engineer, decompile, or disassemble the Software, except to the extent applicable law expressly permits;</li>
+        <li>remove or alter any proprietary or safety-warning notices in the Software;</li>
+        <li>run the same licence key on more than one active installation at a time;</li>
+        <li>use the Software to build a competing product or service.</li>
+      </ul>
+      <p>We may revoke a licence key that is shared, resold, or used in breach of this EULA.</p>
+
+      <h2 id="safety">4. Safety Acknowledgment</h2>
+      <div class="legal-callout danger">
+        <p>
+          <strong>Read this section in full before using the Software.</strong> DORA can read from and
+          write to your vehicle's engine control unit. Used incorrectly, it can damage an engine or
+          drivetrain, cause a vehicle to become unsafe or non-compliant to drive, and cause financial loss.
+          By accepting this EULA you confirm you understand and accept the risks below.
+        </p>
+      </div>
+
+      <h3>4.1 Real ECU flashing risk</h3>
+      <p>
+        Writing a calibration to a real ECU ("flashing") is not a simulated or reversible-by-default
+        action. An interrupted flash, an incompatible map, or a corrupted ROM file can leave an ECU
+        unresponsive or a vehicle inoperable, and may require specialist recovery or replacement hardware
+        to fix. You are responsible for using a stable power supply, a reliable connection, and a verified,
+        vehicle-appropriate ROM file before every flash, and for keeping a backup of the original
+        calibration before writing anything new.
+      </p>
+
+      <h3>4.2 Safety Limits Override</h3>
+      <p>
+        DORA's Safety Guard is enabled by default and is designed to block map writes that fall outside
+        conservative, vehicle-appropriate bounds. Some panels expose a <strong>Safety Limits Override</strong>
+        (or equivalent advanced/expert control) that lets you knowingly write values outside those bounds.
+        Using an override is an explicit, manual decision on your part, made outside the tool's own safety
+        checks. You are solely responsible for any consequence of a write made with an override enabled,
+        including but not limited to knock, lean conditions, boost creep, or engine damage.
+      </p>
+
+      <h3>4.3 Emissions-override features</h3>
+      <p>
+        Some calibration changes achievable through the Software (for example, changes affecting fuelling,
+        catalyst-related sensors, or emissions-control strategy) can cause a vehicle to fall outside the
+        emissions or environmental compliance requirements that apply in the jurisdiction where it is
+        used or registered. You are solely responsible for verifying that any change you make keeps the
+        vehicle legal to use on public roads in your jurisdiction, including for MOT/inspection and
+        emissions purposes, before you drive it. Using the Software to defeat emissions controls on a
+        vehicle used on public roads may be a criminal offence in your jurisdiction — that responsibility
+        is entirely yours, not RACE's.
+      </p>
+
+      <h3>4.4 No guarantee</h3>
+      <p>
+        Nothing in the Software — including AI-generated recommendations, Safety Guard, or a tune obtained
+        through the Tune Marketplace — is guaranteed to be safe, accurate, complete, or legal for your
+        specific vehicle. Always test conservatively and re-verify with live data after applying any
+        change. See <a href="terms.html#tuning-risk">Terms &amp; Conditions, Section 6</a> for the full
+        tuning risk disclaimer.
+      </p>
+
+      <h2 id="disclaimer">5. Disclaimer &amp; Liability</h2>
+      <p>
+        The Software is provided "as is", without warranty of any kind, to the fullest extent permitted by
+        law. RACE's disclaimer of warranties, limitation of liability, and indemnity terms in
+        <a href="terms.html#warranty">Terms &amp; Conditions, Sections 12–14</a> apply to this EULA as if
+        set out in full here, and are not reduced or replaced by anything in this document.
+      </p>
+
+      <h2 id="term">6. Term &amp; Termination</h2>
+      <p>
+        This EULA takes effect when you first accept it and continues until your licence key is cancelled,
+        expires (for a beta key, at the end of the Beta Period), or is revoked under
+        <a href="#restrictions">Section 3</a>. Sections 4 and 5 survive termination.
+      </p>
+
+      <h2 id="law">7. Governing Law</h2>
+      <p>
+        This EULA is governed by the laws of England and Wales, on the same terms as
+        <a href="terms.html#law">Terms &amp; Conditions, Section 17</a>.
+      </p>
+
+      <h2 id="contact">8. Contact</h2>
+      <p>
+        Questions about this EULA can be sent to
+        <a href="mailto:support@projectdora.com">support@projectdora.com</a>.
+      </p>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ───────────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <a href="index.html" class="logo" style="text-decoration:none"><span class="accent">DORA</span></a>
+    <div class="footer-links">
+      <a href="marketplace.html">Marketplace</a>
+      <a href="mailto:support@projectdora.com">Support</a>
+      <a href="terms.html">Terms</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="eula.html">EULA</a>
+    </div>
+    <p class="footer-copy">© 2026 RACE. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>
