@@ -12,7 +12,8 @@ Routes:
   POST /voice/transcribe  Proxy speech-to-text via OpenAI (requires licence key)
   POST /voice/synthesize  Proxy text-to-speech via ElevenLabs (requires licence key)
   GET  /version           Latest desktop app version + download link
-  GET  /validate/{key}    Check if a licence key is active
+  GET  /validate/{key}    Check if a licence key is active (send X-Device-Id to
+                          enforce/refresh Solo tier's one-device-at-a-time lock)
   GET  /portal/{key}      Generate a Stripe customer portal link
   POST /waitlist          Join the beta waitlist (email only, no payment)
   POST /waitlist/webhook  External form webhook (e.g. Google Forms Apps Script) — relays into the same waitlist
@@ -28,9 +29,10 @@ Routes:
 """
 from __future__ import annotations
 
+import asyncio
 import hmac
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import stripe
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile, status
@@ -114,7 +116,45 @@ def _beta_expired(row: db.sqlite3.Row) -> bool:
     return datetime.now(timezone.utc) > datetime.fromisoformat(cfg.BETA_END_DATE)
 
 
-def _require_licence(x_licence_key: str = Header(...)) -> db.sqlite3.Row:
+# Solo licences are bound to a single device; Shop licences cover a whole
+# site (unlimited Technician Accounts there, per the EULA) and are never
+# device-locked. A bound Solo licence can move to a new device once every
+# this many days without contacting support.
+_SOLO_DEVICE_REBIND_DAYS = 30
+
+
+def _enforce_solo_device(row: db.sqlite3.Row, device_id: str) -> db.sqlite3.Row:
+    """No-ops for Shop licences and for callers that didn't send a device
+    id at all (older desktop builds predating this feature) — enforcement
+    only ever tightens once every client sends one, never breaks existing
+    installs outright."""
+    if row["tier"] != "solo" or not device_id:
+        return row
+
+    if not row["device_id"]:
+        db.bind_device(row["licence_key"], device_id)
+    elif row["device_id"] != device_id:
+        bound_at = datetime.fromisoformat(row["device_bound_at"])
+        if datetime.now(timezone.utc) - bound_at < timedelta(days=_SOLO_DEVICE_REBIND_DAYS):
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "This Solo licence is currently active on another device. "
+                    f"It can move to a new device once every {_SOLO_DEVICE_REBIND_DAYS} days — "
+                    "contact support@projectdora.com if you need this sooner."
+                ),
+            )
+        db.bind_device(row["licence_key"], device_id)
+    else:
+        return row
+
+    return db.get_licence(row["licence_key"])
+
+
+def _require_licence(
+    x_licence_key: str = Header(...),
+    x_device_id: str = Header(default=""),
+) -> db.sqlite3.Row:
     row = db.get_licence(x_licence_key)
     if not row:
         raise HTTPException(status_code=401, detail="Invalid licence key")
@@ -129,6 +169,7 @@ def _require_licence(x_licence_key: str = Header(...)) -> db.sqlite3.Row:
             status_code=402,
             detail="The DORA beta has ended. Subscribe at projectdora.com to keep using DORA.",
         )
+    row = _enforce_solo_device(row, x_device_id)
     return row
 
 
@@ -136,28 +177,44 @@ def _require_licence(x_licence_key: str = Header(...)) -> db.sqlite3.Row:
 
 class CheckoutRequest(BaseModel):
     email: EmailStr
+    tier:  str = "shop"   # 'shop' (per-workshop) or 'solo' (single-seat)
+
+    @field_validator("tier")
+    @classmethod
+    def _validate_tier(cls, v: str) -> str:
+        if v not in ("shop", "solo"):
+            raise ValueError("tier must be 'shop' or 'solo'")
+        return v
 
 
 @app.post("/checkout")
 async def create_checkout(body: CheckoutRequest):
-    """Return a Stripe Checkout URL. Garage visits it to subscribe.
+    """Return a Stripe Checkout URL. Garage or solo tuner visits it to subscribe.
 
     Charges a one-time setup fee alongside the recurring subscription in a
     single Checkout session — Stripe supports mixing a one-time price into
     a mode="subscription" session; the one-time price is billed once on
     the first invoice and never recurs."""
+    if body.tier == "solo":
+        setup_price, price = cfg.STRIPE_SOLO_SETUP_PRICE_ID, cfg.STRIPE_SOLO_PRICE_ID
+    else:
+        setup_price, price = cfg.STRIPE_SETUP_PRICE_ID, cfg.STRIPE_PRICE_ID
+
+    if not setup_price or not price:
+        raise HTTPException(status_code=502, detail=f"'{body.tier}' pricing is not configured yet")
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
             customer_email=body.email,
             line_items=[
-                {"price": cfg.STRIPE_SETUP_PRICE_ID, "quantity": 1},
-                {"price": cfg.STRIPE_PRICE_ID, "quantity": 1},
+                {"price": setup_price, "quantity": 1},
+                {"price": price, "quantity": 1},
             ],
             success_url=f"{cfg.SITE_URL}/dora/success.html?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{cfg.SITE_URL}/dora/cancelled.html",
-            metadata={"email": body.email},
+            metadata={"email": body.email, "tier": body.tier},
         )
     except stripe.error.StripeError as exc:
         raise HTTPException(
@@ -272,12 +329,14 @@ async def stripe_webhook(request: Request):
             return {"ok": True}
 
         # New subscriber — create licence and email it
-        email    = data.get("customer_email") or (data.get("metadata") or {}).get("email", "")
+        metadata = data.get("metadata") or {}
+        email    = data.get("customer_email") or metadata.get("email", "")
         cust_id  = data.get("customer")
         key      = db.create_licence(
             email=email,
             stripe_customer_id=cust_id,
             stripe_subscription_id=sub_id,
+            tier=metadata.get("tier", "shop"),
         )
         try:
             from email_sender import send_licence_email
@@ -330,11 +389,15 @@ async def get_version():
 # ── Licence validation ────────────────────────────────────────────────────────
 
 @app.get("/validate/{key}")
-async def validate_licence(key: str):
+async def validate_licence(key: str, x_device_id: str = Header(default="")):
     row = db.get_licence(key)
     if not row or row["status"] != "active" or _beta_expired(row):
         return {"valid": False}
-    return {"valid": True, "email": row["email"]}
+    try:
+        row = _enforce_solo_device(row, x_device_id)
+    except HTTPException as exc:
+        return {"valid": False, "detail": exc.detail}
+    return {"valid": True, "email": row["email"], "tier": row["tier"]}
 
 
 # ── Customer portal ───────────────────────────────────────────────────────────
@@ -797,11 +860,19 @@ async def upload_tune(
     if not file_bytes:
         raise HTTPException(status_code=400, detail="Empty file")
 
+    for label, value in (("hp_before", hp_before), ("hp_after", hp_after)):
+        if value is not None and value < 0:
+            raise HTTPException(status_code=400, detail=f"{label} cannot be negative")
+
     # Public byline never shows the account email — fall back to the
     # licence's email local-part only as a default display name.
     display_name = author_name.strip() or licence["email"].split("@")[0]
 
-    tune_id = db.create_tune(
+    # Offloaded to a thread: this INSERT carries the full file blob (up to
+    # 20MB) — run inline on the event loop, it would stall every other
+    # concurrent request for the duration of the disk write.
+    tune_id = await asyncio.to_thread(
+        db.create_tune,
         title=title,
         author_name=display_name,
         uploader_email=licence["email"],
@@ -825,7 +896,9 @@ async def upload_tune(
 
 @app.get("/marketplace/tunes/{tune_id}/download")
 async def download_tune(tune_id: int):
-    row = db.get_tune_file(tune_id)
+    # Same reasoning as upload_tune's write: this SELECT can return up to
+    # 20MB — offload so it doesn't block the event loop.
+    row = await asyncio.to_thread(db.get_tune_file, tune_id)
     if not row:
         raise HTTPException(status_code=404, detail="Tune not found")
     db.increment_downloads(tune_id)

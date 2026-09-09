@@ -22,8 +22,10 @@ class BackendConfig:
     ELEVENLABS_MODEL_ID:    str   # e.g. eleven_multilingual_v2
     STRIPE_SECRET_KEY:      str
     STRIPE_WEBHOOK_SECRET:  str
-    STRIPE_SETUP_PRICE_ID:  str   # price_xxx for the one-time £150 setup fee
-    STRIPE_PRICE_ID:        str   # price_xxx for the £20/month recurring plan
+    STRIPE_SETUP_PRICE_ID:  str   # price_xxx for the one-time £150 shop setup fee
+    STRIPE_PRICE_ID:        str   # price_xxx for the £20/month shop recurring plan
+    STRIPE_SOLO_SETUP_PRICE_ID: str  # price_xxx for the one-time £100 solo setup fee
+    STRIPE_SOLO_PRICE_ID:       str  # price_xxx for the £12.99/month solo recurring plan
     ADMIN_TOKEN:            str   # secret token for /admin endpoints
     BASE_URL:               str   # e.g. https://api.projectdora.com (backend)
     SITE_URL:               str   # e.g. https://projectdora.com (website)
@@ -47,6 +49,11 @@ def _load() -> BackendConfig:
         STRIPE_WEBHOOK_SECRET = os.environ["STRIPE_WEBHOOK_SECRET"],
         STRIPE_SETUP_PRICE_ID = os.environ["STRIPE_SETUP_PRICE_ID"],
         STRIPE_PRICE_ID       = os.environ["STRIPE_PRICE_ID"],
+        # Optional: solo checkout returns a 502 until these are set, everything
+        # else keeps working — lets the solo tier ship before its Stripe
+        # prices exist yet.
+        STRIPE_SOLO_SETUP_PRICE_ID = os.environ.get("STRIPE_SOLO_SETUP_PRICE_ID", ""),
+        STRIPE_SOLO_PRICE_ID       = os.environ.get("STRIPE_SOLO_PRICE_ID", ""),
         ADMIN_TOKEN           = os.environ["ADMIN_TOKEN"],
         BASE_URL              = os.environ.get("BASE_URL", "http://localhost:8000"),
         SITE_URL              = os.environ.get("SITE_URL", "https://projectdora.com"),
