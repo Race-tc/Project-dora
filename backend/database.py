@@ -116,6 +116,32 @@ def init_db() -> None:
                 created_at      TEXT    NOT NULL
             )
         """)
+        # Lightweight migrations for a `tunes` table created before these
+        # columns existed — CREATE TABLE IF NOT EXISTS above is a no-op
+        # against an already-existing table, so a column added to the
+        # schema after the table's first deploy never actually lands on
+        # production without this (the exact bug that broke every
+        # marketplace route with "no such column" once power_gain/
+        # hp_before/hp_after/tags/etc. were added here after the table
+        # already existed live).
+        for _col_def in (
+            "vehicle_make TEXT NOT NULL DEFAULT ''",
+            "vehicle_model TEXT NOT NULL DEFAULT ''",
+            "vehicle_year TEXT NOT NULL DEFAULT ''",
+            "ecu_type TEXT NOT NULL DEFAULT ''",
+            "engine TEXT NOT NULL DEFAULT ''",
+            "mods TEXT NOT NULL DEFAULT ''",
+            "power_gain TEXT NOT NULL DEFAULT ''",
+            "hp_before REAL",
+            "hp_after REAL",
+            "description TEXT NOT NULL DEFAULT ''",
+            "tags TEXT NOT NULL DEFAULT ''",
+            "downloads INTEGER NOT NULL DEFAULT 0",
+        ):
+            try:
+                con.execute(f"ALTER TABLE tunes ADD COLUMN {_col_def}")
+            except sqlite3.OperationalError:
+                pass   # column already exists
 
 
 # ── Licence helpers ───────────────────────────────────────────────────────────
