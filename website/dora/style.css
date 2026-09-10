@@ -313,7 +313,6 @@ h2 {
 }
 .pricing-grid .pricing-card { max-width: none; }
 .pricing-card--secondary {
-  box-shadow: none;
   opacity: .82;
 }
 .pricing-card--secondary:hover { opacity: 1; }
