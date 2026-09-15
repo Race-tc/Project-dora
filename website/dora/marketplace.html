@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tune Marketplace — DORA</title>
+  <meta name="description" content="Browse and share community ECU tunes for DORA. Upload your own calibration or download one from another tuner." />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="logo" style="text-decoration:none"><span class="accent">DORA</span></a>
+    <div class="nav-links">
+      <a href="index.html#features">Features</a>
+      <a href="index.html#pricing">Pricing</a>
+      <a href="marketplace.html">Marketplace</a>
+      <a href="mailto:racebuilds@gmail.com">Support</a>
+    </div>
+    <a href="#" class="btn btn-sm" onclick="openUpload(); return false;">Upload a Tune</a>
+  </div>
+</nav>
+
+<!-- ── HEADER ──────────────────────────────────────────────────────────────── -->
+<section class="mkt-header">
+  <div class="container">
+    <div class="badge">Community</div>
+    <h1>Tune <span class="accent">Marketplace</span></h1>
+    <p class="hero-sub">
+      Browse calibrations shared by other DORA tuners, or upload your own for
+      the community to try. Free to browse and download — no licence needed.
+    </p>
+    <div class="mkt-disclaimer">
+      ⚠ Tunes here are submitted by the community and are <strong>not verified or endorsed by DORA</strong>.
+      Always inspect a tune and understand your engine's safety margins before flashing it. Use at your own risk.
+    </div>
+  </div>
+</section>
+
+<!-- ── TOOLBAR ─────────────────────────────────────────────────────────────── -->
+<section class="mkt-toolbar-section">
+  <div class="container mkt-toolbar">
+    <input type="text" id="mkt-search" placeholder="Search vehicle, engine, ECU, tag…" />
+    <span id="mkt-count" class="mkt-count">Loading…</span>
+  </div>
+</section>
+
+<!-- ── GRID ────────────────────────────────────────────────────────────────── -->
+<section class="mkt-grid-section">
+  <div class="container">
+    <div id="mkt-empty" class="mkt-empty hidden">No tunes found. Be the first to upload one.</div>
+    <div id="mkt-grid" class="mkt-grid"></div>
+  </div>
+</section>
+
+<!-- ── FOOTER ───────────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <a href="index.html" class="logo" style="text-decoration:none"><span class="accent">DORA</span></a>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="mailto:racebuilds@gmail.com">Support</a>
+      <a href="terms.html">Terms</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="eula.html">EULA</a>
+    </div>
+    <p class="footer-copy">© 2026 RACE. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- ── Upload modal ────────────────────────────────────────────────────────── -->
+<div id="upload-overlay" class="overlay hidden">
+  <div class="modal mkt-modal">
+    <div id="upload-form">
+      <h3>Upload a tune</h3>
+      <p>Requires your DORA licence key. Your account email is never shown publicly.</p>
+
+      <div class="mkt-field-row">
+        <input type="text" id="up-licence" placeholder="DORA-…  (licence key)" />
+        <input type="text" id="up-author" placeholder="Display name (optional)" />
+      </div>
+      <input type="text" id="up-title" placeholder="Tune title *" />
+      <div class="mkt-field-row">
+        <input type="text" id="up-make" placeholder="Vehicle make" />
+        <input type="text" id="up-model" placeholder="Vehicle model" />
+        <input type="text" id="up-year" placeholder="Year" />
+      </div>
+      <div class="mkt-field-row">
+        <input type="text" id="up-ecu" placeholder="ECU type" />
+        <input type="text" id="up-engine" placeholder="Engine" />
+      </div>
+      <input type="text" id="up-mods" placeholder="Supporting mods (e.g. downpipe, intake)" />
+      <div class="mkt-field-row">
+        <input type="text" id="up-gain" placeholder="Power gain (e.g. +45 hp)" />
+        <input type="number" step="0.1" id="up-hp-before" placeholder="HP before" />
+        <input type="number" step="0.1" id="up-hp-after" placeholder="HP after" />
+      </div>
+      <input type="text" id="up-tags" placeholder="Tags, comma separated (e.g. stage1, e85, daily)" />
+      <textarea id="up-desc" placeholder="Description / tuning notes" rows="4"></textarea>
+
+      <label class="mkt-file-label" for="up-file">
+        <span id="up-file-name">Choose tune file… (.bin .hex .ols .kp .adf .map .cal .a2l .xdf .mpc .dam .json .rom .zip, max 20MB)</span>
+      </label>
+      <input type="file" id="up-file" accept=".bin,.hex,.ols,.kp,.adf,.map,.cal,.a2l,.xdf,.mpc,.dam,.json,.rom,.zip" style="display:none" />
+
+      <div id="upload-error" class="modal-error hidden"></div>
+      <div class="modal-btns">
+        <button class="btn btn-lg btn-full" id="upload-submit" onclick="submitUpload()">Upload Tune →</button>
+        <button class="btn-ghost-sm" onclick="closeUpload()">Cancel</button>
+      </div>
+    </div>
+    <div id="upload-success" class="hidden">
+      <h3>Tune uploaded</h3>
+      <p>Your tune is now live on the marketplace for everyone to see.</p>
+      <div class="modal-btns">
+        <button class="btn btn-lg btn-full" onclick="closeUpload()">Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail modal ────────────────────────────────────────────────────────── -->
+<div id="detail-overlay" class="overlay hidden">
+  <div class="modal mkt-modal" id="detail-body"></div>
+</div>
+
+<script src="marketplace.js"></script>
+</body>
+</html>

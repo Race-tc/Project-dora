@@ -27,7 +27,7 @@ def _send(to_email: str, subject: str, html: str) -> None:
     resp.raise_for_status()
 
 
-def send_licence_email(to_email: str, licence_key: str) -> None:
+def send_licence_email(to_email: str, licence_key: str, download_url: str) -> None:
     html = f"""
     <html><body style="font-family:Arial,sans-serif;background:#0a0a1a;color:#e0e0ff;padding:32px">
     <div style="max-width:520px;margin:auto;background:#12122a;border-radius:8px;padding:32px">
@@ -40,7 +40,7 @@ def send_licence_email(to_email: str, licence_key: str) -> None:
       </div>
       <p style="color:#888">To activate:</p>
       <ol style="color:#aaa;line-height:1.8">
-        <li>Open DORA</li>
+        <li><a href="{download_url}" style="color:#7c6fff">Download and install DORA</a> (skip this if you already have it)</li>
         <li>Go to <strong style="color:#e0e0ff">Settings</strong></li>
         <li>Paste your licence key and click <strong style="color:#e0e0ff">Save</strong></li>
       </ol>
@@ -68,7 +68,7 @@ def send_waitlist_confirmation_email(to_email: str) -> None:
     _send(to_email, "You're on the DORA beta waitlist", html)
 
 
-def send_beta_key_email(to_email: str, licence_key: str, beta_end_date: str) -> None:
+def send_beta_key_email(to_email: str, licence_key: str, beta_end_date: str, download_url: str) -> None:
     html = f"""
     <html><body style="font-family:Arial,sans-serif;background:#0a0a1a;color:#e0e0ff;padding:32px">
     <div style="max-width:520px;margin:auto;background:#12122a;border-radius:8px;padding:32px">
@@ -81,7 +81,7 @@ def send_beta_key_email(to_email: str, licence_key: str, beta_end_date: str) -> 
       </div>
       <p style="color:#888">To activate:</p>
       <ol style="color:#aaa;line-height:1.8">
-        <li>Download and install DORA</li>
+        <li><a href="{download_url}" style="color:#7c6fff">Download and install DORA</a></li>
         <li>Go to <strong style="color:#e0e0ff">Settings</strong></li>
         <li>Paste your licence key and click <strong style="color:#e0e0ff">Save</strong></li>
       </ol>

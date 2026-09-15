@@ -32,6 +32,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import re
+import time
 from datetime import datetime, timedelta, timezone
 
 import stripe
@@ -41,6 +42,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, EmailStr, field_validator
 
 import database as db
+import db_backup
 from settings import cfg
 
 # Applied to every request via the middleware below. Generous for the
@@ -100,7 +102,70 @@ async def _limit_request_size(request: Request, call_next):
     return await call_next(request)
 
 
+# ── Rate limiting ────────────────────────────────────────────────────────────
+# No new dependency (slowapi/redis) — this is a single-instance Railway
+# deployment (SQLite already assumes that), so an in-process fixed-window
+# counter is enough to blunt volumetric abuse without adding infra risk this
+# close to launch. Tightest on /ai/ and /voice/ since those proxy paid
+# Anthropic/OpenAI/ElevenLabs calls onto this server's own billing.
+_RATE_LIMITS: dict[str, tuple[int, int]] = {
+    # path prefix -> (max requests, window seconds)
+    "/ai/":               (20, 60),
+    "/voice/":            (20, 60),
+    "/marketplace/tunes": (60, 60),
+    "/waitlist":          (10, 60),
+    "/checkout":          (10, 60),
+}
+_DEFAULT_RATE_LIMIT = (120, 60)
+# Webhooks come from Stripe/Google's own servers, not an abusive caller —
+# never throttle a legitimate retry.
+_RATE_LIMIT_EXEMPT = {"/webhook", "/waitlist/webhook"}
+
+_rate_state: dict[tuple[str, str], list[float]] = {}
+
+
+def _rate_limit_bucket(path: str) -> tuple[int, int]:
+    for prefix, limit in _RATE_LIMITS.items():
+        if path.startswith(prefix):
+            return limit
+    return _DEFAULT_RATE_LIMIT
+
+
+@app.middleware("http")
+async def _rate_limit(request: Request, call_next):
+    path = request.url.path
+    if path in _RATE_LIMIT_EXEMPT:
+        return await call_next(request)
+
+    max_requests, window = _rate_limit_bucket(path)
+    client_ip = request.client.host if request.client else "unknown"
+    key = (client_ip, path)
+    now = time.monotonic()
+    cutoff = now - window
+
+    hits = _rate_state.get(key)
+    if hits:
+        while hits and hits[0] < cutoff:
+            hits.pop(0)
+        if not hits:
+            del _rate_state[key]
+            hits = None
+    if hits is None:
+        hits = []
+        _rate_state[key] = hits
+
+    if len(hits) >= max_requests:
+        return JSONResponse(status_code=429, content={"detail": "Too many requests — please slow down"})
+    hits.append(now)
+    return await call_next(request)
+
+
 db.init_db()
+
+
+@app.on_event("startup")
+async def _start_backup_task() -> None:
+    asyncio.create_task(db_backup.run_forever())
 
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────
@@ -141,7 +206,7 @@ def _enforce_solo_device(row: db.sqlite3.Row, device_id: str) -> db.sqlite3.Row:
                 detail=(
                     "This Solo licence is currently active on another device. "
                     f"It can move to a new device once every {_SOLO_DEVICE_REBIND_DAYS} days — "
-                    "contact support@projectdora.com if you need this sooner."
+                    "contact racebuilds@gmail.com if you need this sooner."
                 ),
             )
         db.bind_device(row["licence_key"], device_id)
@@ -340,7 +405,7 @@ async def stripe_webhook(request: Request):
         )
         try:
             from email_sender import send_licence_email
-            send_licence_email(email, key)
+            send_licence_email(email, key, cfg.DOWNLOAD_URL)
         except Exception as exc:
             # Log but don't fail the webhook — key is in the DB
             print(f"Email failed for {email}: {exc}")
@@ -954,7 +1019,7 @@ async def admin_issue(body: IssueRequest):
     key = db.create_licence(email=body.email, note=body.note or "manual")
     try:
         from email_sender import send_licence_email
-        send_licence_email(body.email, key)
+        send_licence_email(body.email, key, cfg.DOWNLOAD_URL)
         emailed = True
     except Exception as exc:
         emailed = False
@@ -979,7 +1044,7 @@ async def admin_launch_beta():
             email=email, note="beta waitlist", licence_type="beta"
         )
         try:
-            send_beta_key_email(email, key, cfg.BETA_END_DATE)
+            send_beta_key_email(email, key, cfg.BETA_END_DATE, cfg.DOWNLOAD_URL)
             db.mark_waitlist_notified(email)
             issued += 1
         except Exception as exc:

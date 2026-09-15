@@ -20,7 +20,7 @@
       <a href="index.html#features">Features</a>
       <a href="index.html#pricing">Pricing</a>
       <a href="marketplace.html">Marketplace</a>
-      <a href="mailto:support@projectdora.com">Support</a>
+      <a href="mailto:racebuilds@gmail.com">Support</a>
     </div>
     <a href="index.html" class="btn btn-sm">Back to site</a>
   </div>
@@ -31,7 +31,7 @@
   <div class="container">
     <div class="badge">Legal</div>
     <h1>End User <span class="accent">Licence Agreement</span></h1>
-    <div class="legal-updated">Last updated: 28 August 2026</div>
+    <div class="legal-updated">Last updated: 15 September 2026</div>
   </div>
 </section>
 
@@ -61,9 +61,8 @@
         <a href="terms.html">Terms &amp; Conditions</a> that govern the wider Service.
       </p>
       <div class="legal-placeholder">
-        Placeholder — this EULA has not yet been reviewed by a solicitor. Have it and the Safety
-        Acknowledgment below reviewed before relying on it commercially, per the business setup
-        checklist. Replace with RACE's registered company details once incorporated.
+        RACE operates as a sole trader (Cameron Rapoo, trading as RACE), not an incorporated company.
+        Placeholder — add the registered business address here once confirmed for public display.
       </div>
 
       <h2 id="acceptance">1. Acceptance</h2>
@@ -111,20 +110,52 @@
         unresponsive or a vehicle inoperable, and may require specialist recovery or replacement hardware
         to fix. You are responsible for using a stable power supply, a reliable connection, and a verified,
         vehicle-appropriate ROM file before every flash, and for keeping a backup of the original
-        calibration before writing anything new.
+        calibration before writing anything new. DORA's Brick Recovery Mode can attempt a real recovery
+        flash, but only for STM32-based ECU hardware accessed directly via its own programming pins (not
+        the OBD-II connector), and this recovery path has not itself been tested against real silicon by
+        RACE. For any other ECU hardware, or if Brick Recovery Mode doesn't apply, there is no recovery
+        path available through the Software.
       </p>
 
-      <h3>4.2 Safety Limits Override</h3>
+      <h3>4.2 Subaru SSM live tuning</h3>
+      <p>
+        For one protocol only — a vehicle connected live via Subaru SSM in DORA's dedicated live-tuning
+        mode — editing a value on a tuning screen and clicking Apply writes that value directly to your
+        vehicle's live RAM calibration and takes effect immediately on the running engine, without a
+        separate flashing step. This write is temporary (it doesn't survive an ECU power cycle) and only
+        happens once you've confirmed your vehicle's RAM offset in the live-SSM connection dialog. For
+        every other protocol and connection, editing a value on a tuning screen affects only the built-in
+        simulator until you flash it. Where the SSM live-write path applies, you're responsible for the
+        consequences of any value written to the running engine in exactly the same way as for a flashed
+        change.
+      </p>
+
+      <h3>4.3 Known limitations</h3>
+      <p>
+        Some features are limited in ways you should know about before relying on them for a real vehicle:
+        the CAN Bus Analyser's real-hardware interfaces aren't yet wired up and default to Simulator mode;
+        the J2534 pass-thru driver path is implemented against the published specification but hasn't been
+        exercised against a real J2534 DLL or device; and Remote Tune, which shares a live vehicle's sensor
+        data with a connected guest, has no authentication (anyone able to reach the shared session file
+        can view it), works only when host and guest can access the same file location, and is one-way —
+        the guest can view but not control anything.
+      </p>
+
+      <h3>4.4 Safety Limits Override</h3>
       <p>
         DORA's Safety Guard is enabled by default and is designed to block map writes that fall outside
-        conservative, vehicle-appropriate bounds. Some panels expose a <strong>Safety Limits Override</strong>
+        conservative, vehicle-appropriate bounds. It checks values as you edit or apply them in the
+        Software's own tuning screens, and also checks a ROM file's decoded values before ECU Flash or
+        Brick Recovery Mode writes it — but only when a matching XDF/definition has been loaded so the
+        Software can decode that ROM's tables; a ROM flashed with no definition loaded is written without
+        this check. Some panels expose a <strong>Safety Limits Override</strong>
         (or equivalent advanced/expert control) that lets you knowingly write values outside those bounds.
         Using an override is an explicit, manual decision on your part, made outside the tool's own safety
         checks. You are solely responsible for any consequence of a write made with an override enabled,
         including but not limited to knock, lean conditions, boost creep, or engine damage.
       </p>
 
-      <h3>4.3 Emissions-override features</h3>
+      <h3>4.5 Emissions-override features</h3>
       <p>
         Some calibration changes achievable through the Software (for example, changes affecting fuelling,
         catalyst-related sensors, or emissions-control strategy) can cause a vehicle to fall outside the
@@ -136,7 +167,7 @@
         is entirely yours, not RACE's.
       </p>
 
-      <h3>4.4 No guarantee</h3>
+      <h3>4.6 No guarantee</h3>
       <p>
         Nothing in the Software — including AI-generated recommendations, Safety Guard, or a tune obtained
         through the Tune Marketplace — is guaranteed to be safe, accurate, complete, or legal for your
@@ -169,7 +200,7 @@
       <h2 id="contact">8. Contact</h2>
       <p>
         Questions about this EULA can be sent to
-        <a href="mailto:support@projectdora.com">support@projectdora.com</a>.
+        <a href="mailto:racebuilds@gmail.com">racebuilds@gmail.com</a>.
       </p>
 
     </div>
@@ -182,7 +213,7 @@
     <a href="index.html" class="logo" style="text-decoration:none"><span class="accent">DORA</span></a>
     <div class="footer-links">
       <a href="marketplace.html">Marketplace</a>
-      <a href="mailto:support@projectdora.com">Support</a>
+      <a href="mailto:racebuilds@gmail.com">Support</a>
       <a href="terms.html">Terms</a>
       <a href="privacy.html">Privacy</a>
       <a href="eula.html">EULA</a>

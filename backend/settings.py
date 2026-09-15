@@ -62,10 +62,10 @@ def _load() -> BackendConfig:
         LATEST_VERSION        = os.environ.get("LATEST_VERSION", "2.0.0"),
         DOWNLOAD_URL          = os.environ.get(
             "DOWNLOAD_URL",
-            os.environ.get("SITE_URL", "https://projectdora.com") + "/dora/#download",
+            "https://github.com/Race-tc/Project-dora/releases/download/v2.1/DoraSetup.exe",
         ),
         RELEASE_NOTES         = os.environ.get("RELEASE_NOTES", ""),
-        BETA_END_DATE         = os.environ.get("BETA_END_DATE", "2026-10-28T23:59:59+00:00"),
+        BETA_END_DATE         = os.environ.get("BETA_END_DATE", "2027-01-16T23:59:59+00:00"),
     )
 
 
