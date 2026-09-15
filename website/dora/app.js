@@ -115,3 +115,25 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === e.currentTarget) closeWaitlistModal();
   });
 });
+
+// ── Download flow ─────────────────────────────────────────────────────────────
+// Same no-backend approach as the waitlist above: a Google Form (Name/Email/
+// Phone) collects details into its own linked Sheet. The actual "Download
+// DORA" link sits below the embedded form rather than depending on the
+// form's own confirmation screen, so it isn't blocked on that submission
+// succeeding — it's wired to INSTALLER_URL up top the same way the old
+// standalone download-btn was.
+
+function openDownloadModal() {
+  document.getElementById("download-overlay").classList.remove("hidden");
+}
+
+function closeDownloadModal() {
+  document.getElementById("download-overlay").classList.add("hidden");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("download-overlay").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeDownloadModal();
+  });
+});

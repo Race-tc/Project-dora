@@ -261,7 +261,7 @@
       <h2>Ready for the beta?</h2>
       <p>Download DORA for Windows — everything except AI Analysis works without a licence key.</p>
     </div>
-    <a href="#" id="download-btn" class="btn btn-lg">
+    <a href="#" class="btn btn-lg" onclick="openDownloadModal(); return false;">
       Download for Windows
     </a>
   </div>
@@ -322,6 +322,31 @@
       <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
     </p>
     <button class="btn-ghost-sm" onclick="closeWaitlistModal()">Close</button>
+  </div>
+</div>
+
+<!-- ── Download details modal overlay ────────────────────────────────────────── -->
+<!-- Google Form collects Name/Email/Phone (Google stores every submission in
+     its own linked Sheet — no backend involved). The actual download link
+     sits below the form itself rather than depending on the form's own
+     confirmation screen, so it isn't blocked on submission succeeding. -->
+<div id="download-overlay" class="overlay hidden">
+  <div class="modal modal-embed">
+    <h3>Download DORA for Windows</h3>
+    <p>Enter your details below, then use the download link underneath the form.</p>
+    <iframe
+      src="https://docs.google.com/forms/d/e/1FAIpQLSfSMyAAMD6IKJf-Db5bQfbf61j-dhzBMugZn23KWCkqb7jsaw/viewform?embedded=true"
+      width="100%" height="520" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+    <a href="#" id="download-btn" class="btn btn-lg btn-full" style="margin-top:12px;">
+      Download DORA
+    </a>
+    <p style="font-size:12px;color:var(--fg-muted);margin-top:10px;line-height:1.6;">
+      By downloading you agree to the DORA
+      <a href="eula.html#safety" target="_blank" rel="noopener">EULA, including the Safety Acknowledgment</a>
+      (real ECU flashing risk, Safety Limits Override, and emissions-override features), and our
+      <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+    </p>
+    <button class="btn-ghost-sm" onclick="closeDownloadModal()">Close</button>
   </div>
 </div>
 
