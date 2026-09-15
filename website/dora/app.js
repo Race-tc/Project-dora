@@ -5,8 +5,11 @@ const BACKEND_URL = ["localhost", "127.0.0.1"].includes(window.location.hostname
   ? "http://localhost:8000"
   : "https://project-dora-production.up.railway.app";
 
-// Replace this with a real installer download link (e.g. GitHub releases).
-const INSTALLER_URL = "#";  // TODO: add your installer download link
+// Matches backend/settings.py's DOWNLOAD_URL default — keep these in sync
+// (or better, bump both when a new version ships). GitHub Releases has no
+// practical file-size limit, unlike serving the 98MB installer directly
+// off whatever static host serves this page.
+const INSTALLER_URL = "https://github.com/Race-tc/Project-dora/releases/download/v2.1/DoraSetup.exe";
 
 // ── Wire up download button ────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
