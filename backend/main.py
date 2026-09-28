@@ -22,6 +22,7 @@ Routes:
   POST /marketplace/tunes             Upload a tune (requires licence key)
   GET  /marketplace/tunes/{id}/download  Download a tune file (public)
   DELETE /marketplace/tunes/{id}      Delete a tune (owner licence key or admin token)
+  PUT  /marketplace/tunes/{id}/file   Replace a tune's file in place (owner licence key or admin token)
   GET  /admin/licences    List all licences (requires admin token)
   GET  /admin/waitlist    List pending (not-yet-notified) waitlist signups (requires admin token)
   POST /admin/issue       Manually issue a licence (requires admin token)
@@ -31,6 +32,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import json
 import re
 import time
 from datetime import datetime, timedelta, timezone
@@ -71,6 +73,26 @@ def _cached_system(prompt: str) -> list[dict]:
     value cache site in the app."""
     return [{"type": "text", "text": prompt, "cache_control": {"type": "ephemeral"}}]
 
+
+def _as_input_block(block: dict) -> dict:
+    """Strip a response content block down to the fields valid as *input*.
+    /ai/chat hands its response content straight back to the client, which
+    replays the whole conversation (including this block) on every follow-up
+    turn — a response-only field the anthropic SDK adds over time (e.g. a
+    text block's `parsed_output`) rides along in model_dump() but gets a 400
+    from the API if it's ever echoed back verbatim."""
+    kind = block.get("type")
+    if kind == "text":
+        return {"type": "text", "text": block.get("text", "")}
+    if kind == "tool_use":
+        return {
+            "type":  "tool_use",
+            "id":    block.get("id"),
+            "name":  block.get("name"),
+            "input": block.get("input", {}),
+        }
+    return block
+
 stripe.api_key = cfg.STRIPE_SECRET_KEY
 
 app = FastAPI(title="DORA Backend", version="1.0")
@@ -81,8 +103,14 @@ app.add_middleware(
     # cross-origin calls into this backend (the desktop app and any
     # server-to-server calls aren't subject to CORS at all — it's a
     # browser-only mechanism), so this only needs to cover that origin.
-    # Add a www. variant here too if the site is ever served from one.
-    allow_origins=[cfg.SITE_URL],
+    # The live site is currently hosted at race.gt.tc regardless of what
+    # SITE_URL says, so that's always allowed too. Origins never carry a
+    # trailing slash, so strip one off SITE_URL or the match silently fails.
+    allow_origins=sorted({
+        cfg.SITE_URL.rstrip("/"),
+        "https://race.gt.tc",
+        "https://www.race.gt.tc",
+    }),
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -709,7 +737,7 @@ async def ai_chat(
 
     response = client.messages.create(
         model       = body.model,
-        max_tokens  = 2048,
+        max_tokens  = 8192,
         system      = _cached_system(DORA_SYSTEM_PROMPT),
         messages    = body.messages,
         tools       = body.tools,
@@ -720,7 +748,7 @@ async def ai_chat(
     db.log_request(licence["licence_key"], tokens)
 
     return {
-        "content":     [block.model_dump() for block in response.content],
+        "content":     [_as_input_block(block.model_dump()) for block in response.content],
         "stop_reason": response.stop_reason,
         "tokens":      tokens,
     }
@@ -842,6 +870,26 @@ _ALLOWED_TUNE_EXTENSIONS = {
 }
 
 
+def _json_tune_has_maps(file_bytes: bytes) -> bool:
+    """A DORA .json tune (desktop app's maps/tune_json.py schema) must carry
+    at least one 2D '<name>_table' — otherwise it's just listing metadata and
+    imports into the Map Editor as 0 maps."""
+    try:
+        doc = json.loads(file_bytes.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return False
+    if not isinstance(doc, dict):
+        return False
+    for key, block in doc.items():
+        if not (key.endswith("_table") and isinstance(block, dict)):
+            continue
+        data = block.get("data")
+        if (isinstance(data, list) and len(data) >= 2
+                and all(isinstance(r, list) and len(r) >= 2 for r in data)):
+            return True
+    return False
+
+
 def _tune_dict(row: db.sqlite3.Row) -> dict:
     # Deliberately omits licence_key and uploader_email — those stay
     # server-side for moderation/ownership checks, never in a public response.
@@ -853,6 +901,8 @@ def _tune_dict(row: db.sqlite3.Row) -> dict:
         "vehicle_model": row["vehicle_model"],
         "vehicle_year":  row["vehicle_year"],
         "ecu_type":      row["ecu_type"],
+        "ecu_hw":        row["ecu_hw"],
+        "ecu_sw":        row["ecu_sw"],
         "engine":        row["engine"],
         "mods":          row["mods"],
         "power_gain":    row["power_gain"],
@@ -891,6 +941,8 @@ async def upload_tune(
     vehicle_model: str = Form(""),
     vehicle_year: str = Form(""),
     ecu_type: str = Form(""),
+    ecu_hw: str = Form(""),
+    ecu_sw: str = Form(""),
     engine: str = Form(""),
     mods: str = Form(""),
     power_gain: str = Form(""),
@@ -924,6 +976,12 @@ async def upload_tune(
         raise HTTPException(status_code=413, detail="Tune file too large (max 20 MB)")
     if not file_bytes:
         raise HTTPException(status_code=400, detail="Empty file")
+    if ext == ".json" and not _json_tune_has_maps(file_bytes):
+        raise HTTPException(
+            status_code=400,
+            detail="Tune file has no maps — a .json tune needs at least one "
+                   "'<name>_table' with 2D 'data' (listing details alone aren't a tune).",
+        )
 
     for label, value in (("hp_before", hp_before), ("hp_after", hp_after)):
         if value is not None and value < 0:
@@ -948,6 +1006,8 @@ async def upload_tune(
         vehicle_model=vehicle_model.strip(),
         vehicle_year=vehicle_year.strip(),
         ecu_type=ecu_type.strip(),
+        ecu_hw=ecu_hw.strip()[:40],
+        ecu_sw=ecu_sw.strip()[:40],
         engine=engine.strip(),
         mods=mods.strip(),
         power_gain=power_gain.strip(),
@@ -989,6 +1049,40 @@ async def delete_tune(
         raise HTTPException(status_code=403, detail="Not authorised to delete this tune")
     db.delete_tune(tune_id)
     return {"ok": True}
+
+
+@app.put("/marketplace/tunes/{tune_id}/file")
+async def replace_tune_file(
+    tune_id: int,
+    file: UploadFile = File(...),
+    x_licence_key: str = Header(default=""),
+    x_admin_token: str = Header(default=""),
+):
+    """Replace a listing's file in place (same auth as delete) — keeps its id,
+    listing text and download count. Same extension/size/has-maps rules as
+    upload_tune."""
+    row = db.get_tune(tune_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Tune not found")
+    is_owner = bool(x_licence_key) and hmac.compare_digest(x_licence_key, row["licence_key"])
+    is_admin = bool(x_admin_token) and hmac.compare_digest(x_admin_token, cfg.ADMIN_TOKEN)
+    if not (is_owner or is_admin):
+        raise HTTPException(status_code=403, detail="Not authorised to modify this tune")
+
+    import pathlib
+    ext = pathlib.Path(file.filename or "").suffix.lower()
+    if ext not in _ALLOWED_TUNE_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Unsupported file type '{ext or '(none)'}'")
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(file_bytes) > _MAX_TUNE_FILE_BYTES:
+        raise HTTPException(status_code=413, detail="Tune file too large (max 20 MB)")
+    if ext == ".json" and not _json_tune_has_maps(file_bytes):
+        raise HTTPException(status_code=400, detail="Tune file has no maps")
+
+    await asyncio.to_thread(db.replace_tune_file, tune_id, file.filename or row["filename"], file_bytes)
+    return {"ok": True, "file_size": len(file_bytes)}
 
 
 # ── Admin ─────────────────────────────────────────────────────────────────────

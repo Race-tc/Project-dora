@@ -102,6 +102,8 @@ def init_db() -> None:
                 vehicle_model   TEXT    NOT NULL DEFAULT '',
                 vehicle_year    TEXT    NOT NULL DEFAULT '',
                 ecu_type        TEXT    NOT NULL DEFAULT '',
+                ecu_hw          TEXT    NOT NULL DEFAULT '',
+                ecu_sw          TEXT    NOT NULL DEFAULT '',
                 engine          TEXT    NOT NULL DEFAULT '',
                 mods            TEXT    NOT NULL DEFAULT '',
                 power_gain      TEXT    NOT NULL DEFAULT '',
@@ -129,6 +131,8 @@ def init_db() -> None:
             "vehicle_model TEXT NOT NULL DEFAULT ''",
             "vehicle_year TEXT NOT NULL DEFAULT ''",
             "ecu_type TEXT NOT NULL DEFAULT ''",
+            "ecu_hw TEXT NOT NULL DEFAULT ''",
+            "ecu_sw TEXT NOT NULL DEFAULT ''",
             "engine TEXT NOT NULL DEFAULT ''",
             "mods TEXT NOT NULL DEFAULT ''",
             "power_gain TEXT NOT NULL DEFAULT ''",
@@ -287,9 +291,17 @@ def mark_waitlist_notified(email: str) -> None:
 # (used by the download route) selects it.
 _TUNE_LIST_COLUMNS = (
     "id, title, author_name, licence_key, vehicle_make, vehicle_model, vehicle_year, "
-    "ecu_type, engine, mods, power_gain, hp_before, hp_after, description, tags, "
-    "filename, file_size, downloads, created_at"
+    "ecu_type, ecu_hw, ecu_sw, engine, mods, power_gain, hp_before, hp_after, "
+    "description, tags, filename, file_size, downloads, created_at"
 )
+
+
+def normalise_part_number(value: str) -> str:
+    """ECU hardware/software numbers ('0 281 010 254', '0281-010-254') are
+    stored compact ('0281010254') so a search for either spelling matches.
+    Mirrors ecu_tuner/ecu/ecu_identity.py's function of the same name."""
+    compact = "".join(ch for ch in (value or "") if ch not in " -.\t")
+    return compact if compact.isdigit() else (value or "").strip()
 
 
 def create_tune(
@@ -310,20 +322,23 @@ def create_tune(
     hp_after: float | None = None,
     description: str = "",
     tags: str = "",
+    ecu_hw: str = "",
+    ecu_sw: str = "",
 ) -> int:
     now = datetime.now(timezone.utc).isoformat()
     with get_db() as con:
         cur = con.execute(
             """INSERT INTO tunes
                (title, author_name, uploader_email, licence_key, vehicle_make,
-                vehicle_model, vehicle_year, ecu_type, engine, mods, power_gain,
-                hp_before, hp_after, description, tags, filename, file_size,
-                file_blob, downloads, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?)""",
+                vehicle_model, vehicle_year, ecu_type, ecu_hw, ecu_sw, engine,
+                mods, power_gain, hp_before, hp_after, description, tags,
+                filename, file_size, file_blob, downloads, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?)""",
             (title, author_name, uploader_email, licence_key, vehicle_make,
-             vehicle_model, vehicle_year, ecu_type, engine, mods, power_gain,
-             hp_before, hp_after, description, tags, filename, len(file_blob),
-             file_blob, now),
+             vehicle_model, vehicle_year, ecu_type,
+             normalise_part_number(ecu_hw), normalise_part_number(ecu_sw),
+             engine, mods, power_gain, hp_before, hp_after, description, tags,
+             filename, len(file_blob), file_blob, now),
         )
         return cur.lastrowid
 
@@ -339,13 +354,16 @@ def list_tunes(search: str = "") -> list[sqlite3.Row]:
     with get_db() as con:
         if search:
             like = f"%{_like_escape(search)}%"
+            # HW/SW numbers are stored compact — match "0 281 010 254" too.
+            like_id = f"%{_like_escape(normalise_part_number(search))}%"
             return con.execute(
                 f"""SELECT {_TUNE_LIST_COLUMNS} FROM tunes
                     WHERE title LIKE ? ESCAPE '\\' OR vehicle_make LIKE ? ESCAPE '\\'
                        OR vehicle_model LIKE ? ESCAPE '\\' OR engine LIKE ? ESCAPE '\\'
                        OR ecu_type LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+                       OR ecu_hw LIKE ? ESCAPE '\\' OR ecu_sw LIKE ? ESCAPE '\\'
                     ORDER BY created_at DESC""",
-                (like, like, like, like, like, like),
+                (like, like, like, like, like, like, like_id, like_id),
             ).fetchall()
         return con.execute(
             f"SELECT {_TUNE_LIST_COLUMNS} FROM tunes ORDER BY created_at DESC"
@@ -364,6 +382,16 @@ def get_tune_file(tune_id: int) -> sqlite3.Row | None:
         return con.execute(
             "SELECT filename, file_blob FROM tunes WHERE id = ?", (tune_id,)
         ).fetchone()
+
+
+def replace_tune_file(tune_id: int, filename: str, file_blob: bytes) -> bool:
+    """Swap a tune's file in place — keeps its id, listing and download count."""
+    with get_db() as con:
+        cur = con.execute(
+            "UPDATE tunes SET filename = ?, file_size = ?, file_blob = ? WHERE id = ?",
+            (filename, len(file_blob), file_blob, tune_id),
+        )
+        return cur.rowcount > 0
 
 
 def increment_downloads(tune_id: int) -> None:
